@@ -19,38 +19,48 @@ const SubmissionSuccess = ({ inspectionData, onNewInspection }: SubmissionSucces
   const reportId = generateReportId();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 p-4 flex items-center justify-center">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-50 p-4 flex items-center justify-center">
       <Card className="w-full max-w-2xl shadow-2xl border-0">
         <CardContent className="p-8 text-center space-y-6">
           <div className="text-6xl mb-4">✅</div>
           
-          <h1 className="text-3xl font-bold text-slate-800">Inspection Complete!</h1>
+          <h1 className="text-3xl font-bold text-emerald-800">Inspection Complete!</h1>
           
-          <p className="text-slate-600 text-lg">
+          <p className="text-emerald-700 text-lg">
             Your daily vehicle inspection has been successfully submitted and saved.
           </p>
 
-          <div className="bg-white rounded-lg p-6 space-y-4 border border-slate-200">
+          <div className="bg-white rounded-lg p-6 space-y-4 border border-emerald-200">
             <div className="flex justify-between items-center">
-              <span className="font-medium text-slate-700">Report ID:</span>
-              <Badge variant="secondary" className="text-lg px-3 py-1">{reportId}</Badge>
+              <span className="font-medium text-emerald-800">Report ID:</span>
+              <Badge variant="secondary" className="text-lg px-3 py-1 bg-emerald-100 text-emerald-800">{reportId}</Badge>
             </div>
             
             <div className="flex justify-between items-center">
-              <span className="font-medium text-slate-700">Submission Time:</span>
-              <span className="text-slate-600">{new Date().toLocaleString()}</span>
+              <span className="font-medium text-emerald-800">Submission Time:</span>
+              <span className="text-emerald-700">{new Date().toLocaleString()}</span>
             </div>
             
             <div className="flex justify-between items-center">
-              <span className="font-medium text-slate-700">Driver:</span>
-              <span className="text-slate-600">{inspectionData.driverName}</span>
+              <span className="font-medium text-emerald-800">Driver:</span>
+              <span className="text-emerald-700">{inspectionData.driverName}</span>
             </div>
+
+            {inspectionData.supervisor && (
+              <div className="flex justify-between items-center">
+                <span className="font-medium text-emerald-800">Sent to Supervisor:</span>
+                <div className="text-right">
+                  <div className="text-emerald-700 font-medium">{inspectionData.supervisor.name}</div>
+                  <div className="text-sm text-emerald-600">{inspectionData.supervisor.department}</div>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h3 className="font-semibold text-blue-800 mb-2">Next Steps:</h3>
-            <ul className="text-blue-700 text-sm space-y-1 text-left">
-              <li>📧 Report automatically emailed to supervisors</li>
+          <div className="bg-emerald-100 border border-emerald-300 rounded-lg p-4">
+            <h3 className="font-semibold text-emerald-800 mb-2">Next Steps:</h3>
+            <ul className="text-emerald-700 text-sm space-y-1 text-left">
+              <li>📧 Report automatically emailed to selected supervisor</li>
               <li>📄 PDF report generated and stored</li>
               <li>💾 Data backed up to cloud storage</li>
               <li>🔍 Available for fleet maintenance review</li>
@@ -60,20 +70,20 @@ const SubmissionSuccess = ({ inspectionData, onNewInspection }: SubmissionSucces
           <div className="flex gap-4 pt-4">
             <Button 
               onClick={onNewInspection}
-              className="flex-1 h-12 text-base bg-slate-800 hover:bg-slate-700 text-white font-medium"
+              className="flex-1 h-12 text-base bg-emerald-700 hover:bg-emerald-800 text-white font-medium"
             >
               Start New Inspection
             </Button>
             
             <Button 
               variant="outline"
-              className="flex-1 h-12 text-base border-2 font-medium"
+              className="flex-1 h-12 text-base border-2 border-emerald-600 text-emerald-700 hover:bg-emerald-50 font-medium"
             >
               📱 View Dashboard
             </Button>
           </div>
 
-          <p className="text-xs text-slate-500 pt-4">
+          <p className="text-xs text-emerald-600 pt-4">
             City of London Parks & Recreation Department - FleetCheck v1.0
           </p>
         </CardContent>
