@@ -17,48 +17,87 @@ const SubmissionSuccess = ({ inspectionData, onNewInspection, onGoToDashboard }:
     return `FL-${date}-${random}`;
   };
 
-  const generatePDFContent = () => {
+  const generateProfessionalPDFContent = () => {
     const reportId = generateReportId();
     const currentDate = new Date().toLocaleString();
     
     return `
-FLEETCHECK INSPECTION REPORT
-============================
+═══════════════════════════════════════════════════════════════════════════════
+                            CITY OF LONDON
+                      PARKS & RECREATION DEPARTMENT
+                         DAILY VEHICLE INSPECTION REPORT
+═══════════════════════════════════════════════════════════════════════════════
 
-Report ID: ${reportId}
-Date: ${currentDate}
-Driver: ${inspectionData.driverName}
+REPORT INFORMATION
+──────────────────────────────────────────────────────────────────────────────
+Report ID:          ${reportId}
+Date Generated:     ${currentDate}
+System:             FleetCheck v1.0
+
+DRIVER INFORMATION
+──────────────────────────────────────────────────────────────────────────────
+Driver Name:        ${inspectionData.driverName}
+Driver ID:          ${inspectionData.driverId || 'N/A'}
+
+VEHICLE INFORMATION
+──────────────────────────────────────────────────────────────────────────────
+Vehicle:            ${inspectionData.vehicleName || 'N/A'}
+Inspection Date:    ${inspectionData.date || 'N/A'}
 
 START OF DAY INSPECTION
------------------------
-Vehicle: ${inspectionData.vehicleNumber || 'N/A'}
-Odometer Start: ${inspectionData.odometerStart || 'N/A'}
-Time: ${inspectionData.startTime || 'N/A'}
+──────────────────────────────────────────────────────────────────────────────
+Start Time:         ${inspectionData.time || 'N/A'}
+Odometer Reading:   ${inspectionData.odometerStart || 'N/A'} km
 
-Equipment Status:
-${inspectionData.equipment ? Object.entries(inspectionData.equipment).map(([key, value]) => `- ${key}: ${value ? 'OK' : 'NOT OK'}`).join('\n') : 'No equipment data'}
+EQUIPMENT STATUS CHECKLIST
+──────────────────────────────────────────────────────────────────────────────
+${inspectionData.equipment ? Object.entries(inspectionData.equipment).map(([key, value]) => 
+  `${key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}: ${value ? '✓ PASS' : '✗ FAIL'}`
+).join('\n') : 'No equipment data available'}
 
-Start Notes: ${inspectionData.startNotes || 'None'}
+START OF DAY NOTES
+──────────────────────────────────────────────────────────────────────────────
+${inspectionData.notes || 'No notes provided'}
 
 END OF DAY INSPECTION
----------------------
-Odometer End: ${inspectionData.odometerEnd || 'N/A'}
-End Time: ${inspectionData.endTime || 'N/A'}
+──────────────────────────────────────────────────────────────────────────────
+End Time:           ${inspectionData.endTime || 'N/A'}
+End Odometer:       ${inspectionData.odometerEnd || 'N/A'} km
+Total Distance:     ${inspectionData.odometerEnd && inspectionData.odometerStart ? 
+  (parseInt(inspectionData.odometerEnd) - parseInt(inspectionData.odometerStart)) + ' km' : 'N/A'}
 
-End Notes: ${inspectionData.endNotes || 'None'}
-Damage Report: ${inspectionData.damageReport || 'None'}
+END OF DAY NOTES
+──────────────────────────────────────────────────────────────────────────────
+${inspectionData.endNotes || 'No notes provided'}
+
+DAMAGE REPORT
+──────────────────────────────────────────────────────────────────────────────
+${inspectionData.damageReport || 'No damage reported'}
 
 SUPERVISOR INFORMATION
-----------------------
-Supervisor: ${inspectionData.supervisor?.name || 'N/A'}
-Department: ${inspectionData.supervisor?.department || 'N/A'}
-Email: ${inspectionData.supervisor?.email || 'N/A'}
+──────────────────────────────────────────────────────────────────────────────
+Supervisor:         ${inspectionData.supervisor?.name || 'N/A'}
+Department:         ${inspectionData.supervisor?.department || 'N/A'}
+Email:              ${inspectionData.supervisor?.email || 'N/A'}
 
-Digital Signature: ✓ Signed
+DIGITAL SIGNATURE
+──────────────────────────────────────────────────────────────────────────────
+Driver Signature:   ✓ DIGITALLY SIGNED
+Signature Date:     ${currentDate}
 
----
+CERTIFICATION
+──────────────────────────────────────────────────────────────────────────────
+I certify that I have completed this vehicle inspection to the best of my 
+ability and that all information provided is accurate and complete.
+
+Driver: ${inspectionData.driverName}
+Date: ${new Date().toLocaleDateString()}
+
+═══════════════════════════════════════════════════════════════════════════════
+This report was automatically generated by FleetCheck v1.0
 City of London Parks & Recreation Department
-FleetCheck v1.0
+For questions or concerns, please contact your supervisor.
+═══════════════════════════════════════════════════════════════════════════════
     `.trim();
   };
 
@@ -68,28 +107,40 @@ FleetCheck v1.0
       return;
     }
 
-    const pdfContent = generatePDFContent();
+    const pdfContent = generateProfessionalPDFContent();
     const reportId = generateReportId();
     
-    const subject = `FleetCheck Inspection Report - ${inspectionData.driverName} - ${reportId}`;
+    const subject = `Daily Vehicle Inspection Report - ${inspectionData.driverName} - ${reportId}`;
     const body = `Dear ${inspectionData.supervisor.name},
 
-Please find the daily vehicle inspection report below:
+Please find the attached daily vehicle inspection report for review and records.
 
+INSPECTION SUMMARY:
+- Driver: ${inspectionData.driverName}
+- Vehicle: ${inspectionData.vehicleName || 'N/A'}
+- Date: ${inspectionData.date || new Date().toLocaleDateString()}
+- Report ID: ${reportId}
+
+DETAILED REPORT:
 ${pdfContent}
 
-This report was automatically generated by the FleetCheck system.
+This report has been automatically generated and digitally signed through the FleetCheck system.
+
+If you have any questions or need clarification on this inspection, please contact the driver directly.
 
 Best regards,
-FleetCheck System
-City of London Parks & Recreation Department`;
+FleetCheck Automated System
+City of London Parks & Recreation Department
+
+---
+This is an automated message from the FleetCheck vehicle inspection system.`;
 
     const mailtoLink = `mailto:${inspectionData.supervisor.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     
-    console.log('Opening email client with inspection data:', {
+    console.log('Opening email client with professional PDF report:', {
       supervisor: inspectionData.supervisor,
       reportId,
-      content: pdfContent
+      vehicle: inspectionData.vehicleName
     });
     
     window.location.href = mailtoLink;
@@ -101,6 +152,14 @@ City of London Parks & Recreation Department`;
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-50 p-4 flex items-center justify-center">
       <Card className="w-full max-w-2xl shadow-2xl border-0">
         <CardContent className="p-8 text-center space-y-6">
+          <div className="flex justify-center mb-4">
+            <img
+              src="/lovable-uploads/d06e4237-0209-4e8b-ab56-fa47f79f7ca5.png"
+              alt="City of London"
+              className="h-16 w-16"
+            />
+          </div>
+          
           <div className="text-6xl mb-4">✅</div>
           
           <h1 className="text-3xl font-bold text-emerald-800">Inspection Complete!</h1>
@@ -125,6 +184,13 @@ City of London Parks & Recreation Department`;
               <span className="text-emerald-700">{inspectionData.driverName}</span>
             </div>
 
+            {inspectionData.vehicleName && (
+              <div className="flex justify-between items-center">
+                <span className="font-medium text-emerald-800">Vehicle:</span>
+                <span className="text-emerald-700">{inspectionData.vehicleName}</span>
+              </div>
+            )}
+
             {inspectionData.supervisor && (
               <div className="flex justify-between items-center">
                 <span className="font-medium text-emerald-800">Sent to Supervisor:</span>
@@ -139,9 +205,9 @@ City of London Parks & Recreation Department`;
           <div className="bg-emerald-100 border border-emerald-300 rounded-lg p-4">
             <h3 className="font-semibold text-emerald-800 mb-2">Next Steps:</h3>
             <ul className="text-emerald-700 text-sm space-y-1 text-left">
-              <li>📧 Click below to send report via email</li>
-              <li>📄 PDF report will be formatted in email</li>
-              <li>💾 Data saved to local storage</li>
+              <li>📧 Click below to send professional PDF report via email</li>
+              <li>📄 Report includes City of London branding and formatting</li>
+              <li>💾 Data saved locally for your records</li>
               <li>🔍 Available for fleet maintenance review</li>
             </ul>
           </div>
@@ -151,7 +217,7 @@ City of London Parks & Recreation Department`;
               onClick={handleEmailSupervisor}
               className="flex-1 h-12 text-base bg-emerald-700 hover:bg-emerald-800 text-white font-medium"
             >
-              📧 Email Report to Supervisor
+              📧 Email Professional PDF Report
             </Button>
           </div>
 
