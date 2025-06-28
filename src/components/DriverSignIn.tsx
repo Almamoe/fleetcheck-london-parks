@@ -7,9 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface DriverSignInProps {
   onSignIn: (name: string, id: string) => void;
+  onGoToDashboard: () => void;
 }
 
-const DriverSignIn = ({ onSignIn }: DriverSignInProps) => {
+const DriverSignIn = ({ onSignIn, onGoToDashboard }: DriverSignInProps) => {
   const [name, setName] = useState('');
   const [driverId, setDriverId] = useState('');
 
@@ -38,7 +39,7 @@ const DriverSignIn = ({ onSignIn }: DriverSignInProps) => {
             <CardTitle className="text-2xl">Driver Sign In</CardTitle>
             <p className="text-emerald-100 mt-2">Enter your details to begin inspection</p>
           </CardHeader>
-          <CardContent className="p-8">
+          <CardContent className="p-8 space-y-6">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-sm font-medium text-emerald-800">
@@ -78,6 +79,16 @@ const DriverSignIn = ({ onSignIn }: DriverSignInProps) => {
                 Sign In & Start Inspection
               </Button>
             </form>
+            
+            <div className="text-center">
+              <Button 
+                variant="outline"
+                onClick={onGoToDashboard}
+                className="w-full h-12 text-base border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+              >
+                Go to Dashboard
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import DriverSignIn from '@/components/DriverSignIn';
 import StartOfDayForm from '@/components/StartOfDayForm';
@@ -18,6 +19,7 @@ interface Supervisor {
 }
 
 const Index = () => {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState<InspectionStep>('signin');
   const [driverInfo, setDriverInfo] = useState({ name: '', id: '' });
   const [startOfDayData, setStartOfDayData] = useState(null);
@@ -77,10 +79,14 @@ const Index = () => {
     setSelectedSupervisor(undefined);
   };
 
+  const handleGoToDashboard = () => {
+    navigate('/dashboard');
+  };
+
   const renderCurrentStep = () => {
     switch (currentStep) {
       case 'signin':
-        return <DriverSignIn onSignIn={handleSignIn} />;
+        return <DriverSignIn onSignIn={handleSignIn} onGoToDashboard={handleGoToDashboard} />;
       
       case 'startday':
         return (
@@ -124,12 +130,13 @@ const Index = () => {
               ...startOfDayData, 
               ...endOfDayData 
             }}
-            onNewInspection={handleNewInspection} 
+            onNewInspection={handleNewInspection}
+            onGoToDashboard={handleGoToDashboard}
           />
         );
       
       default:
-        return <DriverSignIn onSignIn={handleSignIn} />;
+        return <DriverSignIn onSignIn={handleSignIn} onGoToDashboard={handleGoToDashboard} />;
     }
   };
 
