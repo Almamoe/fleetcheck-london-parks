@@ -1,12 +1,10 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { sendToGoogleSheets, getGoogleAppsScriptCode } from '@/utils/googleSheetsIntegration';
+import { sendToSlack, getSlackSetupInstructions } from '@/utils/slackIntegration';
 
 interface SubmissionSuccessProps {
   inspectionData: any;
@@ -15,7 +13,7 @@ interface SubmissionSuccessProps {
 }
 
 const SubmissionSuccess = ({ inspectionData, onNewInspection, onGoToDashboard }: SubmissionSuccessProps) => {
-  const [sheetUrl, setSheetUrl] = useState('');
+  const [webhookUrl, setWebhookUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionStatus, setSubmissionStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -27,17 +25,17 @@ const SubmissionSuccess = ({ inspectionData, onNewInspection, onGoToDashboard }:
     return `FL-${date}-${random}`;
   };
 
-  // Load saved Google Sheets URL
+  // Load saved Slack webhook URL
   useEffect(() => {
-    const savedUrl = localStorage.getItem('fleetcheck-sheets-url');
+    const savedUrl = localStorage.getItem('fleetcheck-slack-webhook');
     if (savedUrl) {
-      setSheetUrl(savedUrl);
+      setWebhookUrl(savedUrl);
     }
   }, []);
 
-  const handleSendToSheets = async () => {
-    if (!sheetUrl.trim()) {
-      alert('Please enter your Google Sheets URL first.');
+  const handleSendToSlack = async () => {
+    if (!webhookUrl.trim()) {
+      alert('Please enter your Slack webhook URL first.');
       return;
     }
 
@@ -46,18 +44,18 @@ const SubmissionSuccess = ({ inspectionData, onNewInspection, onGoToDashboard }:
     setErrorMessage('');
 
     try {
-      console.log('=== SENDING TO GOOGLE SHEETS ===');
-      console.log('Using sheet URL:', sheetUrl);
+      console.log('=== SENDING TO SLACK ===');
+      console.log('Using webhook URL:', webhookUrl);
       
       // Save the URL for future use
-      localStorage.setItem('fleetcheck-sheets-url', sheetUrl);
+      localStorage.setItem('fleetcheck-slack-webhook', webhookUrl);
       
-      await sendToGoogleSheets(inspectionData, sheetUrl);
+      await sendToSlack(inspectionData, webhookUrl);
       
       setSubmissionStatus('success');
-      console.log('Successfully sent to Google Sheets');
+      console.log('Successfully sent to Slack');
     } catch (error) {
-      console.error('Failed to send to Google Sheets:', error);
+      console.error('Failed to send to Slack:', error);
       setSubmissionStatus('error');
       setErrorMessage(error instanceof Error ? error.message : 'Unknown error occurred');
     } finally {
@@ -84,7 +82,7 @@ const SubmissionSuccess = ({ inspectionData, onNewInspection, onGoToDashboard }:
           <h1 className="text-3xl font-bold text-emerald-800 text-center">Inspection Complete!</h1>
           
           <p className="text-emerald-700 text-lg text-center">
-            Your daily vehicle inspection has been completed. Send it to your supervisor's Google Sheet below.
+            Your daily vehicle inspection has been completed. Send it to your supervisor's Slack channel below.
           </p>
 
           <div className="bg-white rounded-lg p-6 space-y-4 border border-emerald-200">
@@ -122,45 +120,45 @@ const SubmissionSuccess = ({ inspectionData, onNewInspection, onGoToDashboard }:
           </div>
 
           <div className="bg-white rounded-lg p-6 border border-emerald-200 space-y-4">
-            <h3 className="text-lg font-semibold text-emerald-800 mb-4">📊 Send to Google Sheets</h3>
+            <h3 className="text-lg font-semibold text-emerald-800 mb-4">💬 Send to Slack</h3>
             
             <div className="space-y-2">
-              <Label htmlFor="sheetUrl" className="text-sm font-medium text-emerald-800">
-                Google Sheets URL
+              <Label htmlFor="webhookUrl" className="text-sm font-medium text-emerald-800">
+                Slack Webhook URL
               </Label>
               <Input
-                id="sheetUrl"
+                id="webhookUrl"
                 type="url"
-                value={sheetUrl}
-                onChange={(e) => setSheetUrl(e.target.value)}
-                placeholder="https://docs.google.com/spreadsheets/d/your-sheet-id/edit"
+                value={webhookUrl}
+                onChange={(e) => setWebhookUrl(e.target.value)}
+                placeholder="https://hooks.slack.com/services/..."
                 className="border-emerald-300 focus:border-emerald-500"
               />
               <p className="text-xs text-emerald-600">
-                Enter the URL of your Google Sheet where inspection data should be sent
+                Enter your Slack webhook URL to send inspection reports to your Slack channel
               </p>
             </div>
 
             {submissionStatus === 'success' && (
               <div className="bg-green-50 border border-green-300 rounded-lg p-4">
-                <p className="text-green-800 font-medium">✅ Successfully sent to Google Sheets!</p>
-                <p className="text-green-700 text-sm">Your supervisor can now view the inspection data in the spreadsheet.</p>
+                <p className="text-green-800 font-medium">✅ Successfully sent to Slack!</p>
+                <p className="text-green-700 text-sm">The inspection report has been posted to your Slack channel.</p>
               </div>
             )}
 
             {submissionStatus === 'error' && (
               <div className="bg-red-50 border border-red-300 rounded-lg p-4">
-                <p className="text-red-800 font-medium">❌ Failed to send to Google Sheets</p>
+                <p className="text-red-800 font-medium">❌ Failed to send to Slack</p>
                 <p className="text-red-700 text-sm">{errorMessage}</p>
               </div>
             )}
 
             <Button 
-              onClick={handleSendToSheets}
+              onClick={handleSendToSlack}
               disabled={isSubmitting}
               className="w-full h-12 text-base bg-emerald-700 hover:bg-emerald-800 text-white font-medium"
             >
-              {isSubmitting ? '📤 Sending...' : '📊 Send to Google Sheets'}
+              {isSubmitting ? '💬 Sending...' : '💬 Send to Slack'}
             </Button>
 
             <Button
@@ -173,25 +171,11 @@ const SubmissionSuccess = ({ inspectionData, onNewInspection, onGoToDashboard }:
 
             {showInstructions && (
               <div className="bg-blue-50 border border-blue-300 rounded-lg p-4 space-y-3">
-                <h4 className="font-semibold text-blue-800">Setup Instructions:</h4>
+                <h4 className="font-semibold text-blue-800">Slack Setup Instructions:</h4>
                 <ol className="text-blue-700 text-sm space-y-2 list-decimal list-inside">
-                  <li>Create a new Google Sheet or open an existing one</li>
-                  <li>Click "Extensions" → "Apps Script" in your Google Sheet</li>
-                  <li>Delete any existing code and paste the code below:</li>
-                </ol>
-                
-                <Textarea
-                  value={getGoogleAppsScriptCode()}
-                  readOnly
-                  className="font-mono text-xs h-32 bg-gray-50"
-                />
-                
-                <ol className="text-blue-700 text-sm space-y-2 list-decimal list-inside" start={4}>
-                  <li>Click "Save" (💾) then "Deploy" → "New Deployment"</li>
-                  <li>Choose "Web app" as type, set "Execute as" to "Me" and "Access" to "Anyone"</li>
-                  <li>Click "Deploy" and copy the web app URL</li>
-                  <li>Go back to your Google Sheet and copy its URL</li>
-                  <li>Paste the Google Sheet URL above and click "Send to Google Sheets"</li>
+                  {getSlackSetupInstructions().map((instruction, index) => (
+                    <li key={index}>{instruction}</li>
+                  ))}
                 </ol>
               </div>
             )}
