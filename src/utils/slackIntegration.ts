@@ -19,6 +19,21 @@ interface InspectionData {
   submittedAt: string;
 }
 
+interface SlackAttachment {
+  color?: string;
+  title?: string;
+  fields?: Array<{
+    title: string;
+    value: string;
+    short: boolean;
+  }>;
+}
+
+interface SlackMessage {
+  text: string;
+  attachments: SlackAttachment[];
+}
+
 export const sendToSlack = async (inspectionData: InspectionData, webhookUrl: string) => {
   console.log('=== SENDING TO SLACK ===');
   console.log('Webhook URL:', webhookUrl);
@@ -47,7 +62,7 @@ export const sendToSlack = async (inspectionData: InspectionData, webhookUrl: st
   const reportId = `FL-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
 
   // Create Slack message payload
-  const slackMessage = {
+  const slackMessage: SlackMessage = {
     text: `🚗 New Fleet Inspection Report - ${reportId}`,
     attachments: [
       {
@@ -80,26 +95,36 @@ export const sendToSlack = async (inspectionData: InspectionData, webhookUrl: st
 
   // Add notes if they exist
   if (inspectionData.notes || inspectionData.endNotes || inspectionData.damageReport) {
+    const notesFields = [];
+    
+    if (inspectionData.notes) {
+      notesFields.push({
+        title: 'Start Notes',
+        value: inspectionData.notes,
+        short: false
+      });
+    }
+    
+    if (inspectionData.endNotes) {
+      notesFields.push({
+        title: 'End Notes',
+        value: inspectionData.endNotes,
+        short: false
+      });
+    }
+    
+    if (inspectionData.damageReport) {
+      notesFields.push({
+        title: 'Damage Report',
+        value: inspectionData.damageReport,
+        short: false
+      });
+    }
+
     slackMessage.attachments.push({
       color: 'info',
       title: 'Additional Notes',
-      fields: [
-        ...(inspectionData.notes ? [{
-          title: 'Start Notes',
-          value: inspectionData.notes,
-          short: false
-        }] : []),
-        ...(inspectionData.endNotes ? [{
-          title: 'End Notes',
-          value: inspectionData.endNotes,
-          short: false
-        }] : []),
-        ...(inspectionData.damageReport ? [{
-          title: 'Damage Report',
-          value: inspectionData.damageReport,
-          short: false
-        }] : [])
-      ]
+      fields: notesFields
     });
   }
 
