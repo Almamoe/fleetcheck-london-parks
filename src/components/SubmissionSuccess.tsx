@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -118,7 +117,7 @@ For questions or concerns, please contact your supervisor.
     const subject = `Daily Vehicle Inspection Report - ${inspectionData.driverName} - ${reportId}`;
     const body = `Dear ${inspectionData.supervisor.name},
 
-Please find the attached daily vehicle inspection report for review and records.
+Please find the vehicle inspection report below:
 
 INSPECTION SUMMARY:
 - Driver: ${inspectionData.driverName}
@@ -131,43 +130,25 @@ ${pdfContent}
 
 This report has been automatically generated and digitally signed through the FleetCheck system.
 
-If you have any questions or need clarification on this inspection, please contact the driver directly.
-
 Best regards,
 FleetCheck Automated System
-City of London Parks & Recreation Department
-
----
-This is an automated message from the FleetCheck vehicle inspection system.`;
+City of London Parks & Recreation Department`;
 
     const mailtoLink = `mailto:${inspectionData.supervisor.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     
-    console.log('Generated mailto link:', mailtoLink);
-    console.log('Attempting to open email client...');
+    console.log('Opening email with supervisor:', inspectionData.supervisor.email);
+    console.log('Email should open now...');
     
-    try {
-      // Try multiple methods to ensure email client opens
-      const success = window.open(mailtoLink, '_blank');
-      
-      if (!success) {
-        console.log('Window.open failed, trying location.href');
-        window.location.href = mailtoLink;
-      } else {
-        console.log('Email client opened successfully');
-      }
-      
-      // Also try creating a clickable link as fallback
-      const link = document.createElement('a');
-      link.href = mailtoLink;
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-    } catch (error) {
-      console.error('Error opening email client:', error);
-      alert(`Error opening email client. Please copy this email: ${inspectionData.supervisor.email}`);
-    }
+    // Create and click a link to trigger email client
+    const link = document.createElement('a');
+    link.href = mailtoLink;
+    link.target = '_self';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Show confirmation
+    alert(`Email opened for ${inspectionData.supervisor.email}. If your email client didn't open, please check your default email app settings.`);
   };
 
   // Automatically send email when component loads
@@ -247,10 +228,16 @@ This is an automated message from the FleetCheck vehicle inspection system.`;
             <h3 className="font-semibold text-emerald-800 mb-2">Report Status:</h3>
             <ul className="text-emerald-700 text-sm space-y-1 text-left">
               <li>✅ PDF report automatically generated</li>
-              <li>📧 Email client should open with supervisor's address</li>
+              <li>📧 Email client opens with report content</li>
               <li>💾 Data saved locally for your records</li>
               <li>🔍 Available for fleet maintenance review</li>
             </ul>
+          </div>
+
+          <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-4">
+            <p className="text-yellow-800 text-sm">
+              <strong>Note:</strong> The email will contain the full report text. If you need a PDF attachment, you may need to copy the report content into a PDF creator or print to PDF from your email client.
+            </p>
           </div>
 
           <div className="flex gap-4 pt-4">
