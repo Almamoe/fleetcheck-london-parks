@@ -102,10 +102,15 @@ For questions or concerns, please contact your supervisor.
   };
 
   const handleEmailSupervisor = () => {
+    console.log('Email button clicked - checking supervisor email...');
+    
     if (!inspectionData.supervisor?.email) {
+      console.log('No supervisor email available');
       alert('No supervisor email available');
       return;
     }
+
+    console.log('Supervisor email found:', inspectionData.supervisor.email);
 
     const pdfContent = generateProfessionalPDFContent();
     const reportId = generateReportId();
@@ -137,20 +142,47 @@ This is an automated message from the FleetCheck vehicle inspection system.`;
 
     const mailtoLink = `mailto:${inspectionData.supervisor.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     
-    console.log('Opening email client with professional PDF report:', {
-      supervisor: inspectionData.supervisor,
-      reportId,
-      vehicle: inspectionData.vehicleName
-    });
+    console.log('Generated mailto link:', mailtoLink);
+    console.log('Attempting to open email client...');
     
-    // Open the email client
-    window.open(mailtoLink, '_blank');
+    try {
+      // Try multiple methods to ensure email client opens
+      const success = window.open(mailtoLink, '_blank');
+      
+      if (!success) {
+        console.log('Window.open failed, trying location.href');
+        window.location.href = mailtoLink;
+      } else {
+        console.log('Email client opened successfully');
+      }
+      
+      // Also try creating a clickable link as fallback
+      const link = document.createElement('a');
+      link.href = mailtoLink;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+    } catch (error) {
+      console.error('Error opening email client:', error);
+      alert(`Error opening email client. Please copy this email: ${inspectionData.supervisor.email}`);
+    }
   };
 
   // Automatically send email when component loads
   useEffect(() => {
+    console.log('SubmissionSuccess component loaded');
+    console.log('Inspection data:', inspectionData);
+    
     if (inspectionData.supervisor?.email) {
-      handleEmailSupervisor();
+      console.log('Auto-opening email client for supervisor:', inspectionData.supervisor.email);
+      // Small delay to ensure component is fully rendered
+      setTimeout(() => {
+        handleEmailSupervisor();
+      }, 1000);
+    } else {
+      console.log('No supervisor email found for auto-open');
     }
   }, []);
 
@@ -205,6 +237,7 @@ This is an automated message from the FleetCheck vehicle inspection system.`;
                 <div className="text-right">
                   <div className="text-emerald-700 font-medium">{inspectionData.supervisor.name}</div>
                   <div className="text-sm text-emerald-600">{inspectionData.supervisor.department}</div>
+                  <div className="text-xs text-emerald-500">{inspectionData.supervisor.email}</div>
                 </div>
               </div>
             )}
@@ -214,7 +247,7 @@ This is an automated message from the FleetCheck vehicle inspection system.`;
             <h3 className="font-semibold text-emerald-800 mb-2">Report Status:</h3>
             <ul className="text-emerald-700 text-sm space-y-1 text-left">
               <li>✅ PDF report automatically generated</li>
-              <li>📧 Email client opened with supervisor's address</li>
+              <li>📧 Email client should open with supervisor's address</li>
               <li>💾 Data saved locally for your records</li>
               <li>🔍 Available for fleet maintenance review</li>
             </ul>
