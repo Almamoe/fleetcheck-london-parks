@@ -101,15 +101,16 @@ For questions or concerns, please contact your supervisor.
   };
 
   const handleEmailSupervisor = () => {
+    console.log('=== EMAIL BUTTON CLICKED ===');
     console.log('Email button clicked - checking supervisor email...');
     
     if (!inspectionData.supervisor?.email) {
-      console.log('No supervisor email available');
+      console.log('ERROR: No supervisor email available');
       alert('No supervisor email available');
       return;
     }
 
-    console.log('Supervisor email found:', inspectionData.supervisor.email);
+    console.log('SUCCESS: Supervisor email found:', inspectionData.supervisor.email);
 
     const pdfContent = generateProfessionalPDFContent();
     const reportId = generateReportId();
@@ -136,23 +137,53 @@ City of London Parks & Recreation Department`;
 
     const mailtoLink = `mailto:${inspectionData.supervisor.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     
-    console.log('Opening email with supervisor:', inspectionData.supervisor.email);
-    console.log('Email should open now...');
+    console.log('Generated mailto link length:', mailtoLink.length);
+    console.log('Supervisor email for mailto:', inspectionData.supervisor.email);
+    console.log('Attempting to open email client...');
     
-    // Create and click a link to trigger email client
-    const link = document.createElement('a');
-    link.href = mailtoLink;
-    link.target = '_self';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Method 1: Direct window location
+    try {
+      console.log('Trying window.location.href method...');
+      window.location.href = mailtoLink;
+      console.log('window.location.href executed');
+    } catch (error) {
+      console.error('Method 1 failed:', error);
+    }
     
-    // Show confirmation
-    alert(`Email opened for ${inspectionData.supervisor.email}. If your email client didn't open, please check your default email app settings.`);
+    // Method 2: Window.open as backup
+    try {
+      console.log('Trying window.open method...');
+      const result = window.open(mailtoLink, '_self');
+      console.log('window.open result:', result);
+    } catch (error) {
+      console.error('Method 2 failed:', error);
+    }
+    
+    // Method 3: Create link element
+    try {
+      console.log('Trying link element method...');
+      const link = document.createElement('a');
+      link.href = mailtoLink;
+      link.target = '_self';
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      console.log('Link created and added to DOM');
+      link.click();
+      console.log('Link clicked');
+      document.body.removeChild(link);
+      console.log('Link removed from DOM');
+    } catch (error) {
+      console.error('Method 3 failed:', error);
+    }
+    
+    // Show detailed feedback
+    console.log('=== ALL METHODS ATTEMPTED ===');
+    alert(`Attempting to open email for: ${inspectionData.supervisor.email}\n\nIf Gmail doesn't open, please:\n1. Check if you have a default email app set\n2. Try copying the email manually: ${inspectionData.supervisor.email}\n3. Check browser console (F12) for errors`);
   };
 
   // Automatically send email when component loads
   useEffect(() => {
+    console.log('=== COMPONENT LOADED ===');
     console.log('SubmissionSuccess component loaded');
     console.log('Inspection data:', inspectionData);
     
@@ -160,6 +191,7 @@ City of London Parks & Recreation Department`;
       console.log('Auto-opening email client for supervisor:', inspectionData.supervisor.email);
       // Small delay to ensure component is fully rendered
       setTimeout(() => {
+        console.log('Auto-triggering email after delay...');
         handleEmailSupervisor();
       }, 1000);
     } else {
@@ -237,6 +269,15 @@ City of London Parks & Recreation Department`;
           <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-4">
             <p className="text-yellow-800 text-sm">
               <strong>Note:</strong> The email will contain the full report text. If you need a PDF attachment, you may need to copy the report content into a PDF creator or print to PDF from your email client.
+            </p>
+          </div>
+
+          <div className="bg-red-50 border border-red-300 rounded-lg p-4">
+            <p className="text-red-800 text-sm">
+              <strong>Troubleshooting:</strong> If the email doesn't open automatically, please check:
+              <br />• Your browser allows popup windows from this site
+              <br />• You have a default email app configured
+              <br />• Press F12 and check the Console tab for error messages
             </p>
           </div>
 
