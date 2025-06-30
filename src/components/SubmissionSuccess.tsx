@@ -143,7 +143,8 @@ This is an automated message from the FleetCheck vehicle inspection system.`;
       vehicle: inspectionData.vehicleName
     });
     
-    window.location.href = mailtoLink;
+    // Open the email client
+    window.open(mailtoLink, '_blank');
   };
 
   // Automatically send email when component loads
@@ -172,7 +173,7 @@ This is an automated message from the FleetCheck vehicle inspection system.`;
           <h1 className="text-3xl font-bold text-emerald-800">Inspection Complete!</h1>
           
           <p className="text-emerald-700 text-lg">
-            Your daily vehicle inspection has been successfully submitted and automatically sent to your supervisor.
+            Your daily vehicle inspection has been successfully submitted. Your email client should open automatically to send the report to your supervisor.
           </p>
 
           <div className="bg-white rounded-lg p-6 space-y-4 border border-emerald-200">
@@ -200,7 +201,7 @@ This is an automated message from the FleetCheck vehicle inspection system.`;
 
             {inspectionData.supervisor && (
               <div className="flex justify-between items-center">
-                <span className="font-medium text-emerald-800">Automatically Sent to:</span>
+                <span className="font-medium text-emerald-800">Report Ready for:</span>
                 <div className="text-right">
                   <div className="text-emerald-700 font-medium">{inspectionData.supervisor.name}</div>
                   <div className="text-sm text-emerald-600">{inspectionData.supervisor.department}</div>
@@ -213,7 +214,7 @@ This is an automated message from the FleetCheck vehicle inspection system.`;
             <h3 className="font-semibold text-emerald-800 mb-2">Report Status:</h3>
             <ul className="text-emerald-700 text-sm space-y-1 text-left">
               <li>✅ PDF report automatically generated</li>
-              <li>📧 Email sent to supervisor with PDF attachment</li>
+              <li>📧 Email client opened with supervisor's address</li>
               <li>💾 Data saved locally for your records</li>
               <li>🔍 Available for fleet maintenance review</li>
             </ul>
@@ -224,7 +225,7 @@ This is an automated message from the FleetCheck vehicle inspection system.`;
               onClick={handleEmailSupervisor}
               className="flex-1 h-12 text-base bg-emerald-700 hover:bg-emerald-800 text-white font-medium"
             >
-              📧 Email PDF Report Again
+              📧 Email PDF Report
             </Button>
           </div>
 
