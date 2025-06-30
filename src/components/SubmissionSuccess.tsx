@@ -1,7 +1,12 @@
-import React, { useEffect } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { sendToGoogleSheets, getGoogleAppsScriptCode } from '@/utils/googleSheetsIntegration';
 
 interface SubmissionSuccessProps {
   inspectionData: any;
@@ -10,201 +15,62 @@ interface SubmissionSuccessProps {
 }
 
 const SubmissionSuccess = ({ inspectionData, onNewInspection, onGoToDashboard }: SubmissionSuccessProps) => {
+  const [sheetUrl, setSheetUrl] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionStatus, setSubmissionStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [showInstructions, setShowInstructions] = useState(false);
+
   const generateReportId = () => {
     const date = new Date().toISOString().split('T')[0].replace(/-/g, '');
     const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
     return `FL-${date}-${random}`;
   };
 
-  const generateProfessionalPDFContent = () => {
-    const reportId = generateReportId();
-    const currentDate = new Date().toLocaleString();
-    
-    return `
-═══════════════════════════════════════════════════════════════════════════════
-                            CITY OF LONDON
-                      PARKS & RECREATION DEPARTMENT
-                         DAILY VEHICLE INSPECTION REPORT
-═══════════════════════════════════════════════════════════════════════════════
+  // Load saved Google Sheets URL
+  useEffect(() => {
+    const savedUrl = localStorage.getItem('fleetcheck-sheets-url');
+    if (savedUrl) {
+      setSheetUrl(savedUrl);
+    }
+  }, []);
 
-REPORT INFORMATION
-──────────────────────────────────────────────────────────────────────────────
-Report ID:          ${reportId}
-Date Generated:     ${currentDate}
-System:             FleetCheck v1.0
-
-DRIVER INFORMATION
-──────────────────────────────────────────────────────────────────────────────
-Driver Name:        ${inspectionData.driverName}
-Driver ID:          ${inspectionData.driverId || 'N/A'}
-
-VEHICLE INFORMATION
-──────────────────────────────────────────────────────────────────────────────
-Vehicle:            ${inspectionData.vehicleName || 'N/A'}
-Inspection Date:    ${inspectionData.date || 'N/A'}
-
-START OF DAY INSPECTION
-──────────────────────────────────────────────────────────────────────────────
-Start Time:         ${inspectionData.time || 'N/A'}
-Odometer Reading:   ${inspectionData.odometerStart || 'N/A'} km
-
-EQUIPMENT STATUS CHECKLIST
-──────────────────────────────────────────────────────────────────────────────
-${inspectionData.equipment ? Object.entries(inspectionData.equipment).map(([key, value]) => 
-  `${key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}: ${value ? '✓ PASS' : '✗ FAIL'}`
-).join('\n') : 'No equipment data available'}
-
-START OF DAY NOTES
-──────────────────────────────────────────────────────────────────────────────
-${inspectionData.notes || 'No notes provided'}
-
-END OF DAY INSPECTION
-──────────────────────────────────────────────────────────────────────────────
-End Time:           ${inspectionData.endTime || 'N/A'}
-End Odometer:       ${inspectionData.odometerEnd || 'N/A'} km
-Total Distance:     ${inspectionData.odometerEnd && inspectionData.odometerStart ? 
-  (parseInt(inspectionData.odometerEnd) - parseInt(inspectionData.odometerStart)) + ' km' : 'N/A'}
-
-END OF DAY NOTES
-──────────────────────────────────────────────────────────────────────────────
-${inspectionData.endNotes || 'No notes provided'}
-
-DAMAGE REPORT
-──────────────────────────────────────────────────────────────────────────────
-${inspectionData.damageReport || 'No damage reported'}
-
-SUPERVISOR INFORMATION
-──────────────────────────────────────────────────────────────────────────────
-Supervisor:         ${inspectionData.supervisor?.name || 'N/A'}
-Department:         ${inspectionData.supervisor?.department || 'N/A'}
-Email:              ${inspectionData.supervisor?.email || 'N/A'}
-
-DIGITAL SIGNATURE
-──────────────────────────────────────────────────────────────────────────────
-Driver Signature:   ✓ DIGITALLY SIGNED
-Signature Date:     ${currentDate}
-
-CERTIFICATION
-──────────────────────────────────────────────────────────────────────────────
-I certify that I have completed this vehicle inspection to the best of my 
-ability and that all information provided is accurate and complete.
-
-Driver: ${inspectionData.driverName}
-Date: ${new Date().toLocaleDateString()}
-
-═══════════════════════════════════════════════════════════════════════════════
-This report was automatically generated by FleetCheck v1.0
-City of London Parks & Recreation Department
-For questions or concerns, please contact your supervisor.
-═══════════════════════════════════════════════════════════════════════════════
-    `.trim();
-  };
-
-  const handleEmailSupervisor = () => {
-    console.log('=== EMAIL BUTTON CLICKED ===');
-    console.log('Email button clicked - checking supervisor email...');
-    
-    if (!inspectionData.supervisor?.email) {
-      console.log('ERROR: No supervisor email available');
-      alert('No supervisor email available');
+  const handleSendToSheets = async () => {
+    if (!sheetUrl.trim()) {
+      alert('Please enter your Google Sheets URL first.');
       return;
     }
 
-    console.log('SUCCESS: Supervisor email found:', inspectionData.supervisor.email);
+    setIsSubmitting(true);
+    setSubmissionStatus('idle');
+    setErrorMessage('');
 
-    const pdfContent = generateProfessionalPDFContent();
-    const reportId = generateReportId();
-    
-    const subject = `Daily Vehicle Inspection Report - ${inspectionData.driverName} - ${reportId}`;
-    const body = `Dear ${inspectionData.supervisor.name},
-
-Please find the vehicle inspection report below:
-
-INSPECTION SUMMARY:
-- Driver: ${inspectionData.driverName}
-- Vehicle: ${inspectionData.vehicleName || 'N/A'}
-- Date: ${inspectionData.date || new Date().toLocaleDateString()}
-- Report ID: ${reportId}
-
-DETAILED REPORT:
-${pdfContent}
-
-This report has been automatically generated and digitally signed through the FleetCheck system.
-
-Best regards,
-FleetCheck Automated System
-City of London Parks & Recreation Department`;
-
-    const mailtoLink = `mailto:${inspectionData.supervisor.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    
-    console.log('Generated mailto link length:', mailtoLink.length);
-    console.log('Supervisor email for mailto:', inspectionData.supervisor.email);
-    console.log('Attempting to open email client...');
-    
-    // Method 1: Direct window location
     try {
-      console.log('Trying window.location.href method...');
-      window.location.href = mailtoLink;
-      console.log('window.location.href executed');
+      console.log('=== SENDING TO GOOGLE SHEETS ===');
+      console.log('Using sheet URL:', sheetUrl);
+      
+      // Save the URL for future use
+      localStorage.setItem('fleetcheck-sheets-url', sheetUrl);
+      
+      await sendToGoogleSheets(inspectionData, sheetUrl);
+      
+      setSubmissionStatus('success');
+      console.log('Successfully sent to Google Sheets');
     } catch (error) {
-      console.error('Method 1 failed:', error);
+      console.error('Failed to send to Google Sheets:', error);
+      setSubmissionStatus('error');
+      setErrorMessage(error instanceof Error ? error.message : 'Unknown error occurred');
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    // Method 2: Window.open as backup
-    try {
-      console.log('Trying window.open method...');
-      const result = window.open(mailtoLink, '_self');
-      console.log('window.open result:', result);
-    } catch (error) {
-      console.error('Method 2 failed:', error);
-    }
-    
-    // Method 3: Create link element
-    try {
-      console.log('Trying link element method...');
-      const link = document.createElement('a');
-      link.href = mailtoLink;
-      link.target = '_self';
-      link.style.display = 'none';
-      document.body.appendChild(link);
-      console.log('Link created and added to DOM');
-      link.click();
-      console.log('Link clicked');
-      document.body.removeChild(link);
-      console.log('Link removed from DOM');
-    } catch (error) {
-      console.error('Method 3 failed:', error);
-    }
-    
-    // Show detailed feedback
-    console.log('=== ALL METHODS ATTEMPTED ===');
-    alert(`Attempting to open email for: ${inspectionData.supervisor.email}\n\nIf Gmail doesn't open, please:\n1. Check if you have a default email app set\n2. Try copying the email manually: ${inspectionData.supervisor.email}\n3. Check browser console (F12) for errors`);
   };
-
-  // Automatically send email when component loads
-  useEffect(() => {
-    console.log('=== COMPONENT LOADED ===');
-    console.log('SubmissionSuccess component loaded');
-    console.log('Inspection data:', inspectionData);
-    
-    if (inspectionData.supervisor?.email) {
-      console.log('Auto-opening email client for supervisor:', inspectionData.supervisor.email);
-      // Small delay to ensure component is fully rendered
-      setTimeout(() => {
-        console.log('Auto-triggering email after delay...');
-        handleEmailSupervisor();
-      }, 1000);
-    } else {
-      console.log('No supervisor email found for auto-open');
-    }
-  }, []);
 
   const reportId = generateReportId();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-50 p-4 flex items-center justify-center">
-      <Card className="w-full max-w-2xl shadow-2xl border-0">
-        <CardContent className="p-8 text-center space-y-6">
+      <Card className="w-full max-w-4xl shadow-2xl border-0">
+        <CardContent className="p-8 space-y-6">
           <div className="flex justify-center mb-4">
             <img
               src="/lovable-uploads/d06e4237-0209-4e8b-ab56-fa47f79f7ca5.png"
@@ -213,12 +79,12 @@ City of London Parks & Recreation Department`;
             />
           </div>
           
-          <div className="text-6xl mb-4">✅</div>
+          <div className="text-6xl mb-4 text-center">✅</div>
           
-          <h1 className="text-3xl font-bold text-emerald-800">Inspection Complete!</h1>
+          <h1 className="text-3xl font-bold text-emerald-800 text-center">Inspection Complete!</h1>
           
-          <p className="text-emerald-700 text-lg">
-            Your daily vehicle inspection has been successfully submitted. Your email client should open automatically to send the report to your supervisor.
+          <p className="text-emerald-700 text-lg text-center">
+            Your daily vehicle inspection has been completed. Send it to your supervisor's Google Sheet below.
           </p>
 
           <div className="bg-white rounded-lg p-6 space-y-4 border border-emerald-200">
@@ -246,48 +112,89 @@ City of London Parks & Recreation Department`;
 
             {inspectionData.supervisor && (
               <div className="flex justify-between items-center">
-                <span className="font-medium text-emerald-800">Report Ready for:</span>
+                <span className="font-medium text-emerald-800">Supervisor:</span>
                 <div className="text-right">
                   <div className="text-emerald-700 font-medium">{inspectionData.supervisor.name}</div>
                   <div className="text-sm text-emerald-600">{inspectionData.supervisor.department}</div>
-                  <div className="text-xs text-emerald-500">{inspectionData.supervisor.email}</div>
                 </div>
               </div>
             )}
           </div>
 
-          <div className="bg-emerald-100 border border-emerald-300 rounded-lg p-4">
-            <h3 className="font-semibold text-emerald-800 mb-2">Report Status:</h3>
-            <ul className="text-emerald-700 text-sm space-y-1 text-left">
-              <li>✅ PDF report automatically generated</li>
-              <li>📧 Email client opens with report content</li>
-              <li>💾 Data saved locally for your records</li>
-              <li>🔍 Available for fleet maintenance review</li>
-            </ul>
-          </div>
+          <div className="bg-white rounded-lg p-6 border border-emerald-200 space-y-4">
+            <h3 className="text-lg font-semibold text-emerald-800 mb-4">📊 Send to Google Sheets</h3>
+            
+            <div className="space-y-2">
+              <Label htmlFor="sheetUrl" className="text-sm font-medium text-emerald-800">
+                Google Sheets URL
+              </Label>
+              <Input
+                id="sheetUrl"
+                type="url"
+                value={sheetUrl}
+                onChange={(e) => setSheetUrl(e.target.value)}
+                placeholder="https://docs.google.com/spreadsheets/d/your-sheet-id/edit"
+                className="border-emerald-300 focus:border-emerald-500"
+              />
+              <p className="text-xs text-emerald-600">
+                Enter the URL of your Google Sheet where inspection data should be sent
+              </p>
+            </div>
 
-          <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-4">
-            <p className="text-yellow-800 text-sm">
-              <strong>Note:</strong> The email will contain the full report text. If you need a PDF attachment, you may need to copy the report content into a PDF creator or print to PDF from your email client.
-            </p>
-          </div>
+            {submissionStatus === 'success' && (
+              <div className="bg-green-50 border border-green-300 rounded-lg p-4">
+                <p className="text-green-800 font-medium">✅ Successfully sent to Google Sheets!</p>
+                <p className="text-green-700 text-sm">Your supervisor can now view the inspection data in the spreadsheet.</p>
+              </div>
+            )}
 
-          <div className="bg-red-50 border border-red-300 rounded-lg p-4">
-            <p className="text-red-800 text-sm">
-              <strong>Troubleshooting:</strong> If the email doesn't open automatically, please check:
-              <br />• Your browser allows popup windows from this site
-              <br />• You have a default email app configured
-              <br />• Press F12 and check the Console tab for error messages
-            </p>
-          </div>
+            {submissionStatus === 'error' && (
+              <div className="bg-red-50 border border-red-300 rounded-lg p-4">
+                <p className="text-red-800 font-medium">❌ Failed to send to Google Sheets</p>
+                <p className="text-red-700 text-sm">{errorMessage}</p>
+              </div>
+            )}
 
-          <div className="flex gap-4 pt-4">
             <Button 
-              onClick={handleEmailSupervisor}
-              className="flex-1 h-12 text-base bg-emerald-700 hover:bg-emerald-800 text-white font-medium"
+              onClick={handleSendToSheets}
+              disabled={isSubmitting}
+              className="w-full h-12 text-base bg-emerald-700 hover:bg-emerald-800 text-white font-medium"
             >
-              📧 Email PDF Report
+              {isSubmitting ? '📤 Sending...' : '📊 Send to Google Sheets'}
             </Button>
+
+            <Button
+              onClick={() => setShowInstructions(!showInstructions)}
+              variant="outline"
+              className="w-full border-emerald-600 text-emerald-700 hover:bg-emerald-50"
+            >
+              {showInstructions ? 'Hide Instructions' : '📋 Setup Instructions'}
+            </Button>
+
+            {showInstructions && (
+              <div className="bg-blue-50 border border-blue-300 rounded-lg p-4 space-y-3">
+                <h4 className="font-semibold text-blue-800">Setup Instructions:</h4>
+                <ol className="text-blue-700 text-sm space-y-2 list-decimal list-inside">
+                  <li>Create a new Google Sheet or open an existing one</li>
+                  <li>Click "Extensions" → "Apps Script" in your Google Sheet</li>
+                  <li>Delete any existing code and paste the code below:</li>
+                </ol>
+                
+                <Textarea
+                  value={getGoogleAppsScriptCode()}
+                  readOnly
+                  className="font-mono text-xs h-32 bg-gray-50"
+                />
+                
+                <ol className="text-blue-700 text-sm space-y-2 list-decimal list-inside" start={4}>
+                  <li>Click "Save" (💾) then "Deploy" → "New Deployment"</li>
+                  <li>Choose "Web app" as type, set "Execute as" to "Me" and "Access" to "Anyone"</li>
+                  <li>Click "Deploy" and copy the web app URL</li>
+                  <li>Go back to your Google Sheet and copy its URL</li>
+                  <li>Paste the Google Sheet URL above and click "Send to Google Sheets"</li>
+                </ol>
+              </div>
+            )}
           </div>
 
           <div className="flex gap-4">
@@ -308,7 +215,7 @@ City of London Parks & Recreation Department`;
             </Button>
           </div>
 
-          <p className="text-xs text-emerald-600 pt-4">
+          <p className="text-xs text-emerald-600 pt-4 text-center">
             City of London Parks & Recreation Department - FleetCheck v1.0
           </p>
         </CardContent>
