@@ -210,6 +210,8 @@ const SubmissionSuccess = ({ inspectionData, onNewInspection, onGoToDashboard }:
               onClick={onGoToDashboard}
               variant="outline"
               className="flex-1 h-12 text-base border-2 border-emerald-600 text-emerald-700 hover:bg-emerald-50 font-medium"
+            >
+              Go to Dashboard
             </Button>
           </div>
 
