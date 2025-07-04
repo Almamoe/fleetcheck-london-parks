@@ -44,16 +44,16 @@ export const sendToSlack = async (inspectionData: InspectionData, webhookUrl: st
     throw new Error('Invalid Slack webhook URL. Please provide a valid Slack webhook URL.');
   }
 
-  // Prepare equipment status
-  const equipmentPassed = Object.entries(inspectionData.equipment)
+  // Prepare equipment status - now checking for issues instead of what's working
+  const equipmentIssues = Object.entries(inspectionData.equipment)
     .filter(([_, value]) => value)
     .map(([key, _]) => key)
-    .join(', ') || 'None';
+    .join(', ') || 'None reported';
 
-  const equipmentFailed = Object.entries(inspectionData.equipment)
+  const equipmentWorking = Object.entries(inspectionData.equipment)
     .filter(([_, value]) => !value)
     .map(([key, _]) => key)
-    .join(', ') || 'All passed';
+    .join(', ') || 'All equipment reported as working';
 
   const totalMiles = inspectionData.odometerEnd && inspectionData.odometerStart
     ? parseInt(inspectionData.odometerEnd) - parseInt(inspectionData.odometerStart)
@@ -66,7 +66,7 @@ export const sendToSlack = async (inspectionData: InspectionData, webhookUrl: st
     text: `🚗 New Fleet Inspection Report - ${reportId}`,
     attachments: [
       {
-        color: equipmentFailed === 'All passed' ? 'good' : 'warning',
+        color: equipmentIssues === 'None reported' ? 'good' : 'warning',
         fields: [
           {
             title: 'Driver Information',
@@ -85,7 +85,7 @@ export const sendToSlack = async (inspectionData: InspectionData, webhookUrl: st
           },
           {
             title: 'Equipment Status',
-            value: `*✅ Passed:* ${equipmentPassed}\n*❌ Failed:* ${equipmentFailed}`,
+            value: `*⚠️ Issues Reported:* ${equipmentIssues}\n*✅ Working:* ${equipmentWorking}`,
             short: true
           }
         ]

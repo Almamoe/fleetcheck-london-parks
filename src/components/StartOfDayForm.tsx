@@ -182,7 +182,7 @@ const StartOfDayForm = ({ driverName, onSubmit }: StartOfDayFormProps) => {
 
             <div className="space-y-4">
               <Label className="text-lg font-semibold text-emerald-800">Equipment Inspection</Label>
-              <p className="text-sm text-emerald-700">Check all items that are in good working condition:</p>
+              <p className="text-sm text-red-700 font-medium">⚠️ Check all items that have problems or are not working properly:</p>
               
               <div className="grid grid-cols-2 gap-4">
                 {equipmentItems.map((item) => (
@@ -191,7 +191,7 @@ const StartOfDayForm = ({ driverName, onSubmit }: StartOfDayFormProps) => {
                       id={item.key}
                       checked={formData.equipment[item.key as keyof typeof formData.equipment]}
                       onCheckedChange={(checked) => handleEquipmentChange(item.key, checked as boolean)}
-                      className="h-5 w-5 border-emerald-400 data-[state=checked]:bg-emerald-600"
+                      className="h-5 w-5 border-red-400 data-[state=checked]:bg-red-600"
                     />
                     <Label 
                       htmlFor={item.key} 
