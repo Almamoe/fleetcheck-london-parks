@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface StartOfDayFormProps {
   driverName: string;
@@ -19,7 +19,7 @@ interface Vehicle {
   id: string;
   name: string;
   type: string;
-  plateNumber: string;
+  plate_number: string;
   department: string;
 }
 
@@ -50,9 +50,46 @@ const StartOfDayForm = ({ driverName, onSubmit }: StartOfDayFormProps) => {
   });
 
   useEffect(() => {
-    const savedVehicles = JSON.parse(localStorage.getItem('fleetcheck-vehicles') || '[]');
-    setVehicles(savedVehicles);
+    loadVehicles();
   }, []);
+
+  const loadVehicles = async () => {
+    try {
+      console.log('Loading vehicles from Supabase...');
+      const { data, error } = await supabase
+        .from('vehicles')
+        .select('*')
+        .order('name');
+
+      if (error) {
+        console.error('Error loading vehicles:', error);
+        // Fallback to localStorage if Supabase fails
+        const savedVehicles = JSON.parse(localStorage.getItem('fleetcheck-vehicles') || '[]');
+        setVehicles(savedVehicles.map((v: any) => ({
+          id: v.id,
+          name: v.name,
+          type: v.type,
+          plate_number: v.plateNumber,
+          department: v.department
+        })));
+        return;
+      }
+
+      console.log('Loaded vehicles:', data);
+      setVehicles(data || []);
+    } catch (error) {
+      console.error('Error loading vehicles:', error);
+      // Fallback to localStorage
+      const savedVehicles = JSON.parse(localStorage.getItem('fleetcheck-vehicles') || '[]');
+      setVehicles(savedVehicles.map((v: any) => ({
+        id: v.id,
+        name: v.name,
+        type: v.type,
+        plate_number: v.plateNumber,
+        department: v.department
+      })));
+    }
+  };
 
   const handleVehicleSelect = (vehicleId: string) => {
     if (vehicleId === 'add-new') {
@@ -64,7 +101,7 @@ const StartOfDayForm = ({ driverName, onSubmit }: StartOfDayFormProps) => {
     setFormData(prev => ({
       ...prev,
       vehicleId: vehicleId,
-      vehicleName: selectedVehicle ? `${selectedVehicle.name} (${selectedVehicle.plateNumber})` : ''
+      vehicleName: selectedVehicle ? `${selectedVehicle.name} (${selectedVehicle.plate_number})` : ''
     }));
   };
 
@@ -84,7 +121,15 @@ const StartOfDayForm = ({ driverName, onSubmit }: StartOfDayFormProps) => {
       alert('Please select a vehicle before continuing.');
       return;
     }
-    onSubmit(formData);
+    
+    // Include selected vehicle data
+    const selectedVehicle = vehicles.find(v => v.id === formData.vehicleId);
+    const submitData = {
+      ...formData,
+      selectedVehicle
+    };
+    
+    onSubmit(submitData);
   };
 
   const equipmentItems = [
@@ -152,7 +197,7 @@ const StartOfDayForm = ({ driverName, onSubmit }: StartOfDayFormProps) => {
                 <SelectContent>
                   {vehicles.map((vehicle) => (
                     <SelectItem key={vehicle.id} value={vehicle.id}>
-                      {vehicle.name} - {vehicle.plateNumber} ({vehicle.type})
+                      {vehicle.name} - {vehicle.plate_number} ({vehicle.type})
                     </SelectItem>
                   ))}
                   <SelectItem value="add-new" className="text-emerald-700 font-medium">

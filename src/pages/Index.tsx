@@ -7,6 +7,7 @@ import EndOfDayForm from '@/components/EndOfDayForm';
 import DigitalSignature from '@/components/DigitalSignature';
 import SupervisorSelection from '@/components/SupervisorSelection';
 import SubmissionSuccess from '@/components/SubmissionSuccess';
+import { createOrGetDriver, createOrGetVehicle, createOrGetSupervisor, saveInspection } from '@/utils/supabaseOperations';
 
 type InspectionStep = 'signin' | 'startday' | 'endday' | 'signature' | 'supervisor' | 'success';
 
@@ -26,9 +27,20 @@ const Index = () => {
   const [signatureData, setSignatureData] = useState('');
   const [selectedSupervisor, setSelectedSupervisor] = useState<Supervisor>();
 
-  const handleSignIn = (name: string, id: string) => {
-    setDriverInfo({ name, id });
-    setCurrentStep('startday');
+  const handleSignIn = async (name: string, id: string) => {
+    try {
+      // Store driver info in Supabase
+      console.log('Storing driver info in Supabase:', { name, id });
+      await createOrGetDriver(name, id);
+      
+      setDriverInfo({ name, id });
+      setCurrentStep('startday');
+    } catch (error) {
+      console.error('Error storing driver info:', error);
+      // Continue with the flow even if Supabase fails
+      setDriverInfo({ name, id });
+      setCurrentStep('startday');
+    }
   };
 
   const handleStartOfDay = (data: any) => {
@@ -46,27 +58,68 @@ const Index = () => {
     setCurrentStep('supervisor');
   };
 
-  const handleSupervisorSelection = (supervisor: Supervisor) => {
+  const handleSupervisorSelection = async (supervisor: Supervisor) => {
     setSelectedSupervisor(supervisor);
     
-    // Save complete inspection data
-    const completeInspection = {
-      driverName: driverInfo.name,
-      driverId: driverInfo.id,
-      startOfDay: startOfDayData,
-      endOfDay: endOfDayData,
-      signature: signatureData,
-      supervisor: supervisor,
-      submittedAt: new Date().toISOString(),
-    };
-    
-    // Store in localStorage (in production, this would go to a database)
-    const existingInspections = JSON.parse(localStorage.getItem('fleetcheck-inspections') || '[]');
-    existingInspections.push(completeInspection);
-    localStorage.setItem('fleetcheck-inspections', JSON.stringify(existingInspections));
-    
-    console.log('Inspection submitted to supervisor:', supervisor.name, completeInspection);
-    setCurrentStep('success');
+    try {
+      console.log('Saving complete inspection to Supabase...');
+      
+      // Create/get all the required IDs
+      const driverId = await createOrGetDriver(driverInfo.name, driverInfo.id);
+      const vehicleId = await createOrGetVehicle(startOfDayData.selectedVehicle);
+      const supervisorId = await createOrGetSupervisor(supervisor);
+      
+      // Save the inspection
+      const inspectionId = await saveInspection({
+        driverId,
+        vehicleId,
+        supervisorId,
+        startOfDay: startOfDayData,
+        endOfDay: endOfDayData,
+        signature: signatureData
+      });
+      
+      console.log('Inspection saved with ID:', inspectionId);
+      
+      // Also keep localStorage backup for compatibility
+      const completeInspection = {
+        driverName: driverInfo.name,
+        driverId: driverInfo.id,
+        startOfDay: startOfDayData,
+        endOfDay: endOfDayData,
+        signature: signatureData,
+        supervisor: supervisor,
+        submittedAt: new Date().toISOString(),
+        supabaseId: inspectionId
+      };
+      
+      const existingInspections = JSON.parse(localStorage.getItem('fleetcheck-inspections') || '[]');
+      existingInspections.push(completeInspection);
+      localStorage.setItem('fleetcheck-inspections', JSON.stringify(existingInspections));
+      
+      setCurrentStep('success');
+    } catch (error) {
+      console.error('Error saving inspection to Supabase:', error);
+      
+      // Fallback to localStorage only if Supabase fails
+      const completeInspection = {
+        driverName: driverInfo.name,
+        driverId: driverInfo.id,
+        startOfDay: startOfDayData,
+        endOfDay: endOfDayData,
+        signature: signatureData,
+        supervisor: supervisor,
+        submittedAt: new Date().toISOString(),
+        error: 'Failed to save to database'
+      };
+      
+      const existingInspections = JSON.parse(localStorage.getItem('fleetcheck-inspections') || '[]');
+      existingInspections.push(completeInspection);
+      localStorage.setItem('fleetcheck-inspections', JSON.stringify(existingInspections));
+      
+      console.log('Inspection saved to localStorage as fallback');
+      setCurrentStep('success');
+    }
   };
 
   const handleNewInspection = () => {

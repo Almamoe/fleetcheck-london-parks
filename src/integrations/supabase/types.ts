@@ -9,7 +9,166 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      drivers: {
+        Row: {
+          created_at: string
+          driver_id: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          driver_id: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          driver_id?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      inspections: {
+        Row: {
+          created_at: string
+          damage_report: string | null
+          driver_id: string
+          end_notes: string | null
+          end_time: string | null
+          equipment_condition: string | null
+          equipment_issues: Json | null
+          id: string
+          inspection_date: string
+          odometer_end: number | null
+          odometer_start: number
+          signature_data: string | null
+          start_notes: string | null
+          start_time: string
+          status: string | null
+          supervisor_id: string
+          updated_at: string
+          vehicle_id: string
+        }
+        Insert: {
+          created_at?: string
+          damage_report?: string | null
+          driver_id: string
+          end_notes?: string | null
+          end_time?: string | null
+          equipment_condition?: string | null
+          equipment_issues?: Json | null
+          id?: string
+          inspection_date: string
+          odometer_end?: number | null
+          odometer_start: number
+          signature_data?: string | null
+          start_notes?: string | null
+          start_time: string
+          status?: string | null
+          supervisor_id: string
+          updated_at?: string
+          vehicle_id: string
+        }
+        Update: {
+          created_at?: string
+          damage_report?: string | null
+          driver_id?: string
+          end_notes?: string | null
+          end_time?: string | null
+          equipment_condition?: string | null
+          equipment_issues?: Json | null
+          id?: string
+          inspection_date?: string
+          odometer_end?: number | null
+          odometer_start?: number
+          signature_data?: string | null
+          start_notes?: string | null
+          start_time?: string
+          status?: string | null
+          supervisor_id?: string
+          updated_at?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspections_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspections_supervisor_id_fkey"
+            columns: ["supervisor_id"]
+            isOneToOne: false
+            referencedRelation: "supervisors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspections_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supervisors: {
+        Row: {
+          created_at: string
+          department: string
+          email: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          department: string
+          email: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          department?: string
+          email?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      vehicles: {
+        Row: {
+          created_at: string
+          department: string
+          id: string
+          name: string
+          plate_number: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          department: string
+          id?: string
+          name: string
+          plate_number: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          department?: string
+          id?: string
+          name?: string
+          plate_number?: string
+          type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
