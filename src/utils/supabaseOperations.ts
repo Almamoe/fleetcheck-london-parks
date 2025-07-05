@@ -46,12 +46,23 @@ export const createOrGetDriver = async (name: string, driverId: string): Promise
 export const createOrGetVehicle = async (vehicleData: any): Promise<string> => {
   console.log('Creating or getting vehicle:', vehicleData);
   
+  // Handle both old and new data structures
+  const vehicleName = vehicleData.name;
+  const plateNumber = vehicleData.plate_number || vehicleData.plateNumber;
+  const vehicleType = vehicleData.type;
+  const department = vehicleData.department;
+
+  if (!vehicleName || !plateNumber) {
+    console.error('Missing required vehicle data:', vehicleData);
+    throw new Error('Vehicle name and plate number are required');
+  }
+  
   // Try to find existing vehicle by name and plate number
   const { data: existingVehicle, error: findError } = await supabase
     .from('vehicles')
     .select('id')
-    .eq('name', vehicleData.name)
-    .eq('plate_number', vehicleData.plateNumber)
+    .eq('name', vehicleName)
+    .eq('plate_number', plateNumber)
     .maybeSingle();
 
   if (findError) {
@@ -68,10 +79,10 @@ export const createOrGetVehicle = async (vehicleData: any): Promise<string> => {
   const { data: newVehicle, error: createError } = await supabase
     .from('vehicles')
     .insert({
-      name: vehicleData.name,
-      type: vehicleData.type,
-      plate_number: vehicleData.plateNumber,
-      department: vehicleData.department
+      name: vehicleName,
+      type: vehicleType || 'Unknown',
+      plate_number: plateNumber,
+      department: department || 'Unknown'
     })
     .select('id')
     .single();

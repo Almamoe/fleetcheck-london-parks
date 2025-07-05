@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, Users, Check } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
 
 interface Supervisor {
   id: string;
@@ -25,7 +27,9 @@ const SupervisorManager = ({
   selectedSupervisor,
   showTitle = true 
 }: SupervisorManagerProps) => {
+  const { toast } = useToast();
   const [supervisors, setSupervisors] = useState<Supervisor[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newSupervisor, setNewSupervisor] = useState({
     name: '',
@@ -34,33 +38,171 @@ const SupervisorManager = ({
   });
 
   useEffect(() => {
-    const savedSupervisors = JSON.parse(localStorage.getItem('fleetcheck-supervisors') || '[]');
-    setSupervisors(savedSupervisors);
+    loadSupervisors();
   }, []);
 
-  const saveSupervisors = (updatedSupervisors: Supervisor[]) => {
-    setSupervisors(updatedSupervisors);
-    localStorage.setItem('fleetcheck-supervisors', JSON.stringify(updatedSupervisors));
-  };
+  const loadSupervisors = async () => {
+    try {
+      console.log('Loading supervisors from Supabase...');
+      setLoading(true);
+      
+      const { data, error } = await supabase
+        .from('supervisors')
+        .select('*')
+        .order('name');
 
-  const handleAddSupervisor = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newSupervisor.name && newSupervisor.email) {
-      const supervisor: Supervisor = {
-        id: Date.now().toString(),
-        ...newSupervisor
-      };
-      const updatedSupervisors = [...supervisors, supervisor];
-      saveSupervisors(updatedSupervisors);
-      setNewSupervisor({ name: '', email: '', department: 'Parks & Recreation' });
-      setShowAddForm(false);
+      if (error) {
+        console.error('Error loading supervisors from Supabase:', error);
+        toast({
+          title: "Database Error",
+          description: "Failed to load supervisors from database. Please try refreshing the page.",
+          variant: "destructive",
+        });
+        
+        // Fallback to localStorage if Supabase fails
+        const savedSupervisors = JSON.parse(localStorage.getItem('fleetcheck-supervisors') || '[]');
+        setSupervisors(savedSupervisors);
+      } else {
+        console.log('Loaded supervisors from Supabase:', data);
+        setSupervisors(data || []);
+        
+        // Also save to localStorage as backup
+        if (data && data.length > 0) {
+          localStorage.setItem('fleetcheck-supervisors', JSON.stringify(data));
+        }
+      }
+    } catch (error) {
+      console.error('Error loading supervisors:', error);
+      toast({
+        title: "Connection Error",
+        description: "Unable to connect to database. Please check your connection.",
+        variant: "destructive",
+      });
+      
+      // Fallback to localStorage
+      const savedSupervisors = JSON.parse(localStorage.getItem('fleetcheck-supervisors') || '[]');
+      setSupervisors(savedSupervisors);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleDeleteSupervisor = (id: string) => {
-    const updatedSupervisors = supervisors.filter(supervisor => supervisor.id !== id);
-    saveSupervisors(updatedSupervisors);
+  const handleAddSupervisor = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newSupervisor.name || !newSupervisor.email) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      console.log('Adding supervisor to Supabase:', newSupervisor);
+      
+      const { data, error } = await supabase
+        .from('supervisors')
+        .insert({
+          name: newSupervisor.name,
+          email: newSupervisor.email,
+          department: newSupervisor.department
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error adding supervisor to Supabase:', error);
+        toast({
+          title: "Database Error",
+          description: "Failed to add supervisor to database. Please try again.",
+          variant: "destructive",
+        });
+        
+        // Fallback to localStorage
+        const supervisor: Supervisor = {
+          id: Date.now().toString(),
+          ...newSupervisor
+        };
+        const updatedSupervisors = [...supervisors, supervisor];
+        setSupervisors(updatedSupervisors);
+        localStorage.setItem('fleetcheck-supervisors', JSON.stringify(updatedSupervisors));
+      } else {
+        console.log('Added supervisor to Supabase:', data);
+        const updatedSupervisors = [...supervisors, data];
+        setSupervisors(updatedSupervisors);
+        
+        // Also update localStorage
+        localStorage.setItem('fleetcheck-supervisors', JSON.stringify(updatedSupervisors));
+        
+        toast({
+          title: "Success",
+          description: "Supervisor added successfully.",
+        });
+      }
+      
+      setNewSupervisor({ name: '', email: '', department: 'Parks & Recreation' });
+      setShowAddForm(false);
+    } catch (error) {
+      console.error('Error adding supervisor:', error);
+      toast({
+        title: "Connection Error",
+        description: "Unable to connect to database. Please check your connection.",
+        variant: "destructive",
+      });
+    }
   };
+
+  const handleDeleteSupervisor = async (id: string) => {
+    try {
+      console.log('Deleting supervisor from Supabase:', id);
+      
+      const { error } = await supabase
+        .from('supervisors')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting supervisor from Supabase:', error);
+        toast({
+          title: "Database Error",
+          description: "Failed to delete supervisor from database. Please try again.",
+          variant: "destructive",
+        });
+      } else {
+        console.log('Deleted supervisor from Supabase');
+        toast({
+          title: "Success",
+          description: "Supervisor deleted successfully.",
+        });
+      }
+      
+      // Update local state regardless of Supabase success/failure
+      const updatedSupervisors = supervisors.filter(supervisor => supervisor.id !== id);
+      setSupervisors(updatedSupervisors);
+      localStorage.setItem('fleetcheck-supervisors', JSON.stringify(updatedSupervisors));
+    } catch (error) {
+      console.error('Error deleting supervisor:', error);
+      toast({
+        title: "Connection Error",
+        description: "Unable to connect to database. Please check your connection.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        {showTitle && (
+          <h2 className="text-2xl font-bold text-slate-800">Available Supervisors</h2>
+        )}
+        <div className="text-center py-8">
+          <p className="text-slate-600">Loading supervisors...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
