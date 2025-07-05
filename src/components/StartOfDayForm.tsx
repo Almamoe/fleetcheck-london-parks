@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
 
 interface StartOfDayFormProps {
   driverName: string;
@@ -25,7 +26,9 @@ interface Vehicle {
 
 const StartOfDayForm = ({ driverName, onSubmit }: StartOfDayFormProps) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [loadingVehicles, setLoadingVehicles] = useState(true);
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     time: new Date().toTimeString().split(' ')[0].slice(0, 5),
@@ -56,38 +59,53 @@ const StartOfDayForm = ({ driverName, onSubmit }: StartOfDayFormProps) => {
   const loadVehicles = async () => {
     try {
       console.log('Loading vehicles from Supabase...');
+      setLoadingVehicles(true);
+      
       const { data, error } = await supabase
         .from('vehicles')
         .select('*')
         .order('name');
 
       if (error) {
-        console.error('Error loading vehicles:', error);
+        console.error('Error loading vehicles from Supabase:', error);
+        toast({
+          title: "Database Error",
+          description: "Failed to load vehicles from database. Please try refreshing the page.",
+          variant: "destructive",
+        });
+        
         // Fallback to localStorage if Supabase fails
         const savedVehicles = JSON.parse(localStorage.getItem('fleetcheck-vehicles') || '[]');
-        setVehicles(savedVehicles.map((v: any) => ({
+        const mappedVehicles = savedVehicles.map((v: any) => ({
           id: v.id,
           name: v.name,
           type: v.type,
-          plate_number: v.plateNumber,
+          plate_number: v.plateNumber || v.plate_number,
           department: v.department
-        })));
-        return;
+        }));
+        console.log('Loaded vehicles from localStorage:', mappedVehicles);
+        setVehicles(mappedVehicles);
+      } else {
+        console.log('Loaded vehicles from Supabase:', data);
+        setVehicles(data || []);
+        
+        if (!data || data.length === 0) {
+          toast({
+            title: "No Vehicles Found",
+            description: "No vehicles are available. Please add a vehicle first.",
+            variant: "destructive",
+          });
+        }
       }
-
-      console.log('Loaded vehicles:', data);
-      setVehicles(data || []);
     } catch (error) {
       console.error('Error loading vehicles:', error);
-      // Fallback to localStorage
-      const savedVehicles = JSON.parse(localStorage.getItem('fleetcheck-vehicles') || '[]');
-      setVehicles(savedVehicles.map((v: any) => ({
-        id: v.id,
-        name: v.name,
-        type: v.type,
-        plate_number: v.plateNumber,
-        department: v.department
-      })));
+      toast({
+        title: "Connection Error",
+        description: "Unable to connect to database. Please check your connection.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingVehicles(false);
     }
   };
 
@@ -118,7 +136,11 @@ const StartOfDayForm = ({ driverName, onSubmit }: StartOfDayFormProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.vehicleId) {
-      alert('Please select a vehicle before continuing.');
+      toast({
+        title: "Vehicle Required",
+        description: "Please select a vehicle before continuing.",
+        variant: "destructive",
+      });
       return;
     }
     
@@ -190,24 +212,41 @@ const StartOfDayForm = ({ driverName, onSubmit }: StartOfDayFormProps) => {
               <Label htmlFor="vehicle" className="text-sm font-medium text-emerald-800">
                 Select Vehicle
               </Label>
-              <Select onValueChange={handleVehicleSelect} required>
-                <SelectTrigger className="h-11 border-emerald-300 focus:border-emerald-500">
-                  <SelectValue placeholder="Choose a vehicle..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {vehicles.map((vehicle) => (
-                    <SelectItem key={vehicle.id} value={vehicle.id}>
-                      {vehicle.name} - {vehicle.plate_number} ({vehicle.type})
-                    </SelectItem>
-                  ))}
-                  <SelectItem value="add-new" className="text-emerald-700 font-medium">
-                    <div className="flex items-center">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add New Vehicle
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+              {loadingVehicles ? (
+                <div className="h-11 flex items-center justify-center border border-emerald-300 rounded-md">
+                  <span className="text-sm text-gray-500">Loading vehicles...</span>
+                </div>
+              ) : (
+                <Select onValueChange={handleVehicleSelect} required>
+                  <SelectTrigger className="h-11 border-emerald-300 focus:border-emerald-500">
+                    <SelectValue placeholder={vehicles.length === 0 ? "No vehicles available - Add one first" : "Choose a vehicle..."} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {vehicles.length > 0 ? (
+                      <>
+                        {vehicles.map((vehicle) => (
+                          <SelectItem key={vehicle.id} value={vehicle.id}>
+                            {vehicle.name} - {vehicle.plate_number} ({vehicle.type})
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="add-new" className="text-emerald-700 font-medium">
+                          <div className="flex items-center">
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add New Vehicle
+                          </div>
+                        </SelectItem>
+                      </>
+                    ) : (
+                      <SelectItem value="add-new" className="text-emerald-700 font-medium">
+                        <div className="flex items-center">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add New Vehicle
+                        </div>
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -265,8 +304,9 @@ const StartOfDayForm = ({ driverName, onSubmit }: StartOfDayFormProps) => {
             <Button 
               type="submit" 
               className="w-full h-12 text-base bg-emerald-700 hover:bg-emerald-800 text-white font-medium"
+              disabled={loadingVehicles}
             >
-              Complete Start of Day Inspection
+              {loadingVehicles ? "Loading..." : "Complete Start of Day Inspection"}
             </Button>
           </form>
         </CardContent>
