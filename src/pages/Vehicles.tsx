@@ -5,53 +5,165 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Truck, Plus, Trash2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
 
 interface Vehicle {
   id: string;
   name: string;
   type: string;
-  plateNumber: string;
+  plate_number: string;
   department: string;
+  created_at?: string;
 }
 
 const Vehicles = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [newVehicle, setNewVehicle] = useState({
     name: '',
     type: '',
-    plateNumber: '',
+    plate_number: '',
     department: 'Parks & Recreation'
   });
+  const { toast } = useToast();
 
   useEffect(() => {
-    const savedVehicles = JSON.parse(localStorage.getItem('fleetcheck-vehicles') || '[]');
-    setVehicles(savedVehicles);
+    loadVehicles();
   }, []);
 
-  const saveVehicles = (updatedVehicles: Vehicle[]) => {
-    setVehicles(updatedVehicles);
-    localStorage.setItem('fleetcheck-vehicles', JSON.stringify(updatedVehicles));
-  };
+  const loadVehicles = async () => {
+    try {
+      console.log('Loading vehicles from Supabase...');
+      const { data, error } = await supabase
+        .from('vehicles')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-  const handleAddVehicle = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newVehicle.name && newVehicle.type && newVehicle.plateNumber) {
-      const vehicle: Vehicle = {
-        id: Date.now().toString(),
-        ...newVehicle
-      };
-      const updatedVehicles = [...vehicles, vehicle];
-      saveVehicles(updatedVehicles);
-      setNewVehicle({ name: '', type: '', plateNumber: '', department: 'Parks & Recreation' });
-      setShowAddForm(false);
+      if (error) {
+        console.error('Error loading vehicles:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load vehicles from database",
+          variant: "destructive",
+        });
+        // Fallback to localStorage
+        const savedVehicles = JSON.parse(localStorage.getItem('fleetcheck-vehicles') || '[]');
+        setVehicles(savedVehicles.map((v: any) => ({
+          id: v.id,
+          name: v.name,
+          type: v.type,
+          plate_number: v.plateNumber || v.plate_number,
+          department: v.department
+        })));
+      } else {
+        console.log('Loaded vehicles from Supabase:', data);
+        setVehicles(data || []);
+      }
+    } catch (error) {
+      console.error('Error loading vehicles:', error);
+      toast({
+        title: "Error",
+        description: "Failed to connect to database",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleDeleteVehicle = (id: string) => {
-    const updatedVehicles = vehicles.filter(vehicle => vehicle.id !== id);
-    saveVehicles(updatedVehicles);
+  const handleAddVehicle = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newVehicle.name && newVehicle.type && newVehicle.plate_number) {
+      try {
+        console.log('Adding vehicle to Supabase:', newVehicle);
+        const { data, error } = await supabase
+          .from('vehicles')
+          .insert([{
+            name: newVehicle.name,
+            type: newVehicle.type,
+            plate_number: newVehicle.plate_number,
+            department: newVehicle.department
+          }])
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error adding vehicle:', error);
+          toast({
+            title: "Error",
+            description: "Failed to add vehicle to database",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        console.log('Vehicle added successfully:', data);
+        setVehicles(prev => [data, ...prev]);
+        setNewVehicle({ name: '', type: '', plate_number: '', department: 'Parks & Recreation' });
+        setShowAddForm(false);
+        toast({
+          title: "Success",
+          description: "Vehicle added successfully",
+        });
+      } catch (error) {
+        console.error('Error adding vehicle:', error);
+        toast({
+          title: "Error",
+          description: "Failed to add vehicle",
+          variant: "destructive",
+        });
+      }
+    }
   };
+
+  const handleDeleteVehicle = async (id: string) => {
+    try {
+      console.log('Deleting vehicle from Supabase:', id);
+      const { error } = await supabase
+        .from('vehicles')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting vehicle:', error);
+        toast({
+          title: "Error",
+          description: "Failed to delete vehicle from database",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('Vehicle deleted successfully');
+      setVehicles(prev => prev.filter(vehicle => vehicle.id !== id));
+      toast({
+        title: "Success",
+        description: "Vehicle deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting vehicle:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete vehicle",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold text-slate-800">Vehicle Management</h1>
+        </div>
+        <div className="flex justify-center py-12">
+          <div className="text-slate-600">Loading vehicles...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -97,11 +209,11 @@ const Vehicles = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="plateNumber" className="text-emerald-800">Plate Number</Label>
+                  <Label htmlFor="plate_number" className="text-emerald-800">Plate Number</Label>
                   <Input
-                    id="plateNumber"
-                    value={newVehicle.plateNumber}
-                    onChange={(e) => setNewVehicle({ ...newVehicle, plateNumber: e.target.value })}
+                    id="plate_number"
+                    value={newVehicle.plate_number}
+                    onChange={(e) => setNewVehicle({ ...newVehicle, plate_number: e.target.value })}
                     placeholder="e.g., ABC-123"
                     className="border-emerald-300 focus:border-emerald-500"
                     required
@@ -155,7 +267,7 @@ const Vehicles = () => {
             <CardContent>
               <div className="space-y-2 text-sm">
                 <p><span className="font-medium text-slate-600">Type:</span> {vehicle.type}</p>
-                <p><span className="font-medium text-slate-600">Plate:</span> {vehicle.plateNumber}</p>
+                <p><span className="font-medium text-slate-600">Plate:</span> {vehicle.plate_number}</p>
                 <p><span className="font-medium text-slate-600">Department:</span> {vehicle.department}</p>
               </div>
             </CardContent>
