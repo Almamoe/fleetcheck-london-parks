@@ -4,10 +4,26 @@ import { supabase } from '@/integrations/supabase/client';
 export const sendInspectionConfirmation = async (inspectionData: any, supervisor: any, driverName: string) => {
   try {
     console.log('Sending inspection confirmation email...');
+    console.log('Inspection data being sent:', inspectionData);
     
     const { data, error } = await supabase.functions.invoke('send-inspection-confirmation', {
       body: {
-        inspectionData,
+        inspectionData: {
+          driverName,
+          vehicleName: inspectionData.selectedVehicle || inspectionData.vehicleName,
+          startOfDay: {
+            date: inspectionData.date,
+            time: inspectionData.time,
+            odometerStart: inspectionData.odometerStart,
+            equipment: inspectionData.equipment || {},
+            notes: inspectionData.notes || inspectionData.startNotes
+          },
+          endOfDay: {
+            odometerEnd: inspectionData.odometerEnd,
+            notes: inspectionData.endNotes,
+            damageReport: inspectionData.damageReport
+          }
+        },
         supervisorEmail: supervisor.email,
         supervisorName: supervisor.name,
         driverName
