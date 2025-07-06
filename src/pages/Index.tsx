@@ -81,12 +81,25 @@ const Index = () => {
       
       console.log('Inspection saved with ID:', inspectionId);
       
-      // Also keep localStorage backup for compatibility
+      // Also keep localStorage backup for compatibility with enhanced data structure
       const completeInspection = {
         driverName: driverInfo.name,
         driverId: driverInfo.id,
-        startOfDay: startOfDayData,
-        endOfDay: endOfDayData,
+        selectedVehicle: startOfDayData.selectedVehicle,
+        vehicleName: startOfDayData.selectedVehicle?.name 
+          ? `${startOfDayData.selectedVehicle.name} (${startOfDayData.selectedVehicle.plate_number})`
+          : 'Unknown Vehicle',
+        date: startOfDayData.date,
+        time: startOfDayData.time,
+        odometerStart: startOfDayData.odometerStart,
+        odometerEnd: endOfDayData.odometerEnd,
+        endTime: endOfDayData.endTime,
+        equipment: startOfDayData.equipment,
+        notes: startOfDayData.notes,
+        startNotes: startOfDayData.notes,
+        endNotes: endOfDayData.endNotes,
+        damageReport: endOfDayData.damageReport,
+        comments: endOfDayData.comments,
         signature: signatureData,
         supervisor: supervisor,
         submittedAt: new Date().toISOString(),
@@ -105,8 +118,21 @@ const Index = () => {
       const completeInspection = {
         driverName: driverInfo.name,
         driverId: driverInfo.id,
-        startOfDay: startOfDayData,
-        endOfDay: endOfDayData,
+        selectedVehicle: startOfDayData.selectedVehicle,
+        vehicleName: startOfDayData.selectedVehicle?.name 
+          ? `${startOfDayData.selectedVehicle.name} (${startOfDayData.selectedVehicle.plate_number})`
+          : 'Unknown Vehicle',
+        date: startOfDayData.date,
+        time: startOfDayData.time,
+        odometerStart: startOfDayData.odometerStart,
+        odometerEnd: endOfDayData.odometerEnd,
+        endTime: endOfDayData.endTime,
+        equipment: startOfDayData.equipment,
+        notes: startOfDayData.notes,
+        startNotes: startOfDayData.notes,
+        endNotes: endOfDayData.endNotes,
+        damageReport: endOfDayData.damageReport,
+        comments: endOfDayData.comments,
         signature: signatureData,
         supervisor: supervisor,
         submittedAt: new Date().toISOString(),
@@ -179,8 +205,21 @@ const Index = () => {
             inspectionData={{ 
               driverName: driverInfo.name, 
               supervisor: selectedSupervisor,
-              ...startOfDayData, 
-              ...endOfDayData 
+              selectedVehicle: startOfDayData.selectedVehicle,
+              vehicleName: startOfDayData.selectedVehicle?.name 
+                ? `${startOfDayData.selectedVehicle.name} (${startOfDayData.selectedVehicle.plate_number})`
+                : 'Unknown Vehicle',
+              date: startOfDayData.date,
+              time: startOfDayData.time,
+              odometerStart: startOfDayData.odometerStart,
+              odometerEnd: endOfDayData.odometerEnd,
+              endTime: endOfDayData.endTime,
+              equipment: startOfDayData.equipment,
+              notes: startOfDayData.notes,
+              startNotes: startOfDayData.notes,
+              endNotes: endOfDayData.endNotes,
+              damageReport: endOfDayData.damageReport,
+              comments: endOfDayData.comments
             }}
             onNewInspection={handleNewInspection}
             onGoToDashboard={handleGoToDashboard}

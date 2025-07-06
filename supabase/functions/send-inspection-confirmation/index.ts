@@ -52,6 +52,25 @@ const handler = async (req: Request): Promise<Response> => {
     const inspectionDate = inspectionData.date || new Date().toLocaleDateString();
     const inspectionTime = inspectionData.time || new Date().toLocaleTimeString();
 
+    // Collect all notes/comments - check multiple possible field names
+    const startNotes = inspectionData.notes || inspectionData.startNotes || '';
+    const endNotes = inspectionData.endNotes || '';
+    const damageReport = inspectionData.damageReport || '';
+    const comments = inspectionData.comments || '';
+
+    // Build the notes section HTML
+    let notesHtml = '';
+    if (startNotes || endNotes || damageReport || comments) {
+      notesHtml = `
+        <div class="section">
+          <h2>📝 Additional Notes & Comments</h2>
+          ${startNotes ? `<div style="margin-bottom: 15px;"><strong>Start of Day Notes:</strong><div class="notes">${startNotes}</div></div>` : ''}
+          ${endNotes ? `<div style="margin-bottom: 15px;"><strong>End of Day Notes:</strong><div class="notes">${endNotes}</div></div>` : ''}
+          ${comments ? `<div style="margin-bottom: 15px;"><strong>General Comments:</strong><div class="notes">${comments}</div></div>` : ''}
+          ${damageReport ? `<div><strong>Damage Report:</strong><div class="notes">${damageReport}</div></div>` : ''}
+        </div>`;
+    }
+
     // Send email to supervisor
     const supervisorEmailResponse = await resend.emails.send({
       from: "FleetCheck <onboarding@resend.dev>",
@@ -74,7 +93,7 @@ const handler = async (req: Request): Promise<Response> => {
                 .info-value { color: #6b7280; }
                 .equipment-status { background-color: #fef3c7; padding: 15px; border-radius: 6px; border-left: 4px solid #f59e0b; }
                 .equipment-good { background-color: #d1fae5; border-left-color: #10b981; }
-                .notes { background-color: #f3f4f6; padding: 15px; border-radius: 6px; white-space: pre-wrap; }
+                .notes { background-color: #f3f4f6; padding: 15px; border-radius: 6px; white-space: pre-wrap; border: 1px solid #e5e7eb; margin-top: 8px; }
                 .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px; }
             </style>
         </head>
@@ -122,13 +141,7 @@ const handler = async (req: Request): Promise<Response> => {
                     </div>
                 </div>
 
-                ${(inspectionData.notes || inspectionData.endNotes || inspectionData.damageReport) ? `
-                <div class="section">
-                    <h2>📝 Additional Notes</h2>
-                    ${inspectionData.notes ? `<div style="margin-bottom: 15px;"><strong>Start Notes:</strong><div class="notes">${inspectionData.notes}</div></div>` : ''}
-                    ${inspectionData.endNotes ? `<div style="margin-bottom: 15px;"><strong>End Notes:</strong><div class="notes">${inspectionData.endNotes}</div></div>` : ''}
-                    ${inspectionData.damageReport ? `<div><strong>Damage Report:</strong><div class="notes">${inspectionData.damageReport}</div></div>` : ''}
-                </div>` : ''}
+                ${notesHtml}
 
                 <div class="footer">
                     <p>This report was generated on ${new Date().toLocaleString()}</p>

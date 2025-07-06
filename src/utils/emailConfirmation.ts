@@ -21,10 +21,13 @@ export const sendInspectionConfirmation = async (inspectionData: any, supervisor
           odometerStart: inspectionData.odometerStart,
           odometerEnd: inspectionData.odometerEnd,
           equipment: inspectionData.equipment || {},
-          notes: inspectionData.notes,
+          notes: inspectionData.notes || inspectionData.startNotes,
           endNotes: inspectionData.endNotes,
           damageReport: inspectionData.damageReport,
-          endTime: inspectionData.endTime
+          endTime: inspectionData.endTime,
+          // Also include alternative field names in case they're used
+          startNotes: inspectionData.startNotes,
+          comments: inspectionData.comments
         },
         supervisorEmail: supervisor.email,
         supervisorName: supervisor.name,
