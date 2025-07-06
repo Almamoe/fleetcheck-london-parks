@@ -11,18 +11,15 @@ export const sendInspectionConfirmation = async (inspectionData: any, supervisor
         inspectionData: {
           driverName,
           vehicleName: inspectionData.selectedVehicle || inspectionData.vehicleName,
-          startOfDay: {
-            date: inspectionData.date,
-            time: inspectionData.time,
-            odometerStart: inspectionData.odometerStart,
-            equipment: inspectionData.equipment || {},
-            notes: inspectionData.notes || inspectionData.startNotes
-          },
-          endOfDay: {
-            odometerEnd: inspectionData.odometerEnd,
-            notes: inspectionData.endNotes,
-            damageReport: inspectionData.damageReport
-          }
+          date: inspectionData.date,
+          time: inspectionData.time,
+          odometerStart: inspectionData.odometerStart,
+          odometerEnd: inspectionData.odometerEnd,
+          equipment: inspectionData.equipment || {},
+          notes: inspectionData.notes,
+          endNotes: inspectionData.endNotes,
+          damageReport: inspectionData.damageReport,
+          endTime: inspectionData.endTime
         },
         supervisorEmail: supervisor.email,
         supervisorName: supervisor.name,

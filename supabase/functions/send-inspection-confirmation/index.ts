@@ -33,13 +33,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Prepare equipment status - handle both formats
     let equipmentIssues = 'None reported';
-    if (inspectionData.startOfDay?.equipment) {
-      const issues = Object.entries(inspectionData.startOfDay.equipment)
-        .filter(([_, value]) => value === true)
-        .map(([key, _]) => key.replace(/([A-Z])/g, ' $1').trim())
-        .join(', ');
-      equipmentIssues = issues || 'None reported';
-    } else if (inspectionData.equipment) {
+    if (inspectionData.equipment) {
       const issues = Object.entries(inspectionData.equipment)
         .filter(([_, value]) => value === true)
         .map(([key, _]) => key.replace(/([A-Z])/g, ' $1').trim())
@@ -48,15 +42,15 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Calculate total miles
-    const odometerStart = inspectionData.startOfDay?.odometerStart || inspectionData.odometerStart;
-    const odometerEnd = inspectionData.endOfDay?.odometerEnd || inspectionData.odometerEnd;
+    const odometerStart = inspectionData.odometerStart;
+    const odometerEnd = inspectionData.odometerEnd;
     const totalMiles = odometerEnd && odometerStart
       ? parseInt(odometerEnd) - parseInt(odometerStart)
       : 0;
 
     // Get inspection date and time
-    const inspectionDate = inspectionData.startOfDay?.date || inspectionData.date || new Date().toLocaleDateString();
-    const inspectionTime = inspectionData.startOfDay?.time || inspectionData.time || new Date().toLocaleTimeString();
+    const inspectionDate = inspectionData.date || new Date().toLocaleDateString();
+    const inspectionTime = inspectionData.time || new Date().toLocaleTimeString();
 
     // Send email to supervisor
     const supervisorEmailResponse = await resend.emails.send({
@@ -128,12 +122,12 @@ const handler = async (req: Request): Promise<Response> => {
                     </div>
                 </div>
 
-                ${(inspectionData.startOfDay?.notes || inspectionData.notes || inspectionData.endOfDay?.notes || inspectionData.endNotes || inspectionData.endOfDay?.damageReport || inspectionData.damageReport) ? `
+                ${(inspectionData.notes || inspectionData.endNotes || inspectionData.damageReport) ? `
                 <div class="section">
                     <h2>📝 Additional Notes</h2>
-                    ${(inspectionData.startOfDay?.notes || inspectionData.notes) ? `<div style="margin-bottom: 15px;"><strong>Start Notes:</strong><div class="notes">${inspectionData.startOfDay?.notes || inspectionData.notes}</div></div>` : ''}
-                    ${(inspectionData.endOfDay?.notes || inspectionData.endNotes) ? `<div style="margin-bottom: 15px;"><strong>End Notes:</strong><div class="notes">${inspectionData.endOfDay?.notes || inspectionData.endNotes}</div></div>` : ''}
-                    ${(inspectionData.endOfDay?.damageReport || inspectionData.damageReport) ? `<div><strong>Damage Report:</strong><div class="notes">${inspectionData.endOfDay?.damageReport || inspectionData.damageReport}</div></div>` : ''}
+                    ${inspectionData.notes ? `<div style="margin-bottom: 15px;"><strong>Start Notes:</strong><div class="notes">${inspectionData.notes}</div></div>` : ''}
+                    ${inspectionData.endNotes ? `<div style="margin-bottom: 15px;"><strong>End Notes:</strong><div class="notes">${inspectionData.endNotes}</div></div>` : ''}
+                    ${inspectionData.damageReport ? `<div><strong>Damage Report:</strong><div class="notes">${inspectionData.damageReport}</div></div>` : ''}
                 </div>` : ''}
 
                 <div class="footer">
