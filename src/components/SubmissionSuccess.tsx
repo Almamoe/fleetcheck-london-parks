@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -6,8 +5,10 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Mail, CheckCircle, AlertCircle } from 'lucide-react';
 import { sendToSlack, getSlackSetupInstructions } from '@/utils/slackIntegration';
-import EmailIntegration from './EmailIntegration';
+import { sendInspectionConfirmation } from '@/utils/emailConfirmation';
+import { useToast } from '@/components/ui/use-toast';
 
 interface SubmissionSuccessProps {
   inspectionData: any;
@@ -16,9 +17,12 @@ interface SubmissionSuccessProps {
 }
 
 const SubmissionSuccess = ({ inspectionData, onNewInspection, onGoToDashboard }: SubmissionSuccessProps) => {
+  const { toast } = useToast();
   const [webhookUrl, setWebhookUrl] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submissionStatus, setSubmissionStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [isSubmittingSlack, setIsSubmittingSlack] = useState(false);
+  const [isSubmittingEmail, setIsSubmittingEmail] = useState(false);
+  const [slackStatus, setSlackStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [emailStatus, setEmailStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [showInstructions, setShowInstructions] = useState(false);
 
@@ -42,8 +46,8 @@ const SubmissionSuccess = ({ inspectionData, onNewInspection, onGoToDashboard }:
       return;
     }
 
-    setIsSubmitting(true);
-    setSubmissionStatus('idle');
+    setIsSubmittingSlack(true);
+    setSlackStatus('idle');
     setErrorMessage('');
 
     try {
@@ -55,14 +59,54 @@ const SubmissionSuccess = ({ inspectionData, onNewInspection, onGoToDashboard }:
       
       await sendToSlack(inspectionData, webhookUrl);
       
-      setSubmissionStatus('success');
+      setSlackStatus('success');
       console.log('Successfully sent to Slack');
     } catch (error) {
       console.error('Failed to send to Slack:', error);
-      setSubmissionStatus('error');
+      setSlackStatus('error');
       setErrorMessage(error instanceof Error ? error.message : 'Unknown error occurred');
     } finally {
-      setIsSubmitting(false);
+      setIsSubmittingSlack(false);
+    }
+  };
+
+  const handleSendEmailConfirmation = async () => {
+    if (!inspectionData.supervisor?.email) {
+      toast({
+        title: "No Supervisor Email",
+        description: "Please ensure a supervisor with an email address is selected.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmittingEmail(true);
+    setEmailStatus('idle');
+
+    try {
+      console.log('=== SENDING EMAIL CONFIRMATION ===');
+      
+      await sendInspectionConfirmation(
+        inspectionData, 
+        inspectionData.supervisor, 
+        inspectionData.driverName
+      );
+      
+      setEmailStatus('success');
+      toast({
+        title: "Email Sent!",
+        description: `Inspection confirmation sent to ${inspectionData.supervisor.name}`,
+      });
+    } catch (error) {
+      console.error('Failed to send email confirmation:', error);
+      setEmailStatus('error');
+      toast({
+        title: "Email Failed",
+        description: error instanceof Error ? error.message : 'Failed to send email confirmation',
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmittingEmail(false);
     }
   };
 
@@ -129,7 +173,65 @@ const SubmissionSuccess = ({ inspectionData, onNewInspection, onGoToDashboard }:
             </TabsList>
             
             <TabsContent value="email" className="space-y-4">
-              <EmailIntegration inspectionData={inspectionData} />
+              <div className="bg-white rounded-lg p-6 border border-emerald-200 space-y-4">
+                <h3 className="text-lg font-semibold text-emerald-800 mb-4 flex items-center">
+                  <Mail className="mr-2 h-5 w-5" />
+                  Send Email Confirmation
+                </h3>
+                
+                {inspectionData.supervisor && (
+                  <div className="bg-emerald-50 p-4 rounded-lg">
+                    <p className="text-sm text-emerald-700 mb-2">
+                      <strong>Email will be sent to:</strong>
+                    </p>
+                    <div className="text-emerald-800">
+                      <div className="font-medium">{inspectionData.supervisor.name}</div>
+                      <div className="text-sm">{inspectionData.supervisor.email}</div>
+                      <div className="text-sm text-emerald-600">{inspectionData.supervisor.department}</div>
+                    </div>
+                  </div>
+                )}
+
+                {emailStatus === 'success' && (
+                  <div className="bg-green-50 border border-green-300 rounded-lg p-4 flex items-start">
+                    <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 mr-3 flex-shrink-0" />
+                    <div>
+                      <p className="text-green-800 font-medium">Email Sent Successfully!</p>
+                      <p className="text-green-700 text-sm mt-1">
+                        The inspection report has been sent to {inspectionData.supervisor?.name}.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {emailStatus === 'error' && (
+                  <div className="bg-red-50 border border-red-300 rounded-lg p-4 flex items-start">
+                    <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 mr-3 flex-shrink-0" />
+                    <div>
+                      <p className="text-red-800 font-medium">Failed to send email</p>
+                      <p className="text-red-700 text-sm mt-1">Please check your Resend configuration and try again.</p>
+                    </div>
+                  </div>
+                )}
+
+                <Button 
+                  onClick={handleSendEmailConfirmation}
+                  disabled={isSubmittingEmail || !inspectionData.supervisor?.email}
+                  className="w-full h-12 text-base bg-emerald-700 hover:bg-emerald-800 text-white font-medium"
+                >
+                  {isSubmittingEmail ? (
+                    <>
+                      <Mail className="mr-2 h-4 w-4 animate-pulse" />
+                      Sending Email...
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="mr-2 h-4 w-4" />
+                      Send Email to Supervisor
+                    </>
+                  )}
+                </Button>
+              </div>
             </TabsContent>
             
             <TabsContent value="slack" className="space-y-4">
@@ -153,14 +255,14 @@ const SubmissionSuccess = ({ inspectionData, onNewInspection, onGoToDashboard }:
                   </p>
                 </div>
 
-                {submissionStatus === 'success' && (
+                {slackStatus === 'success' && (
                   <div className="bg-green-50 border border-green-300 rounded-lg p-4">
                     <p className="text-green-800 font-medium">✅ Successfully sent to Slack!</p>
                     <p className="text-green-700 text-sm">The inspection report has been posted to your Slack channel.</p>
                   </div>
                 )}
 
-                {submissionStatus === 'error' && (
+                {slackStatus === 'error' && (
                   <div className="bg-red-50 border border-red-300 rounded-lg p-4">
                     <p className="text-red-800 font-medium">❌ Failed to send to Slack</p>
                     <p className="text-red-700 text-sm">{errorMessage}</p>
@@ -169,10 +271,10 @@ const SubmissionSuccess = ({ inspectionData, onNewInspection, onGoToDashboard }:
 
                 <Button 
                   onClick={handleSendToSlack}
-                  disabled={isSubmitting}
+                  disabled={isSubmittingSlack}
                   className="w-full h-12 text-base bg-emerald-700 hover:bg-emerald-800 text-white font-medium"
                 >
-                  {isSubmitting ? '💬 Sending...' : '💬 Send to Slack'}
+                  {isSubmittingSlack ? '💬 Sending...' : '💬 Send to Slack'}
                 </Button>
 
                 <Button
