@@ -4,6 +4,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Vehicles from "./pages/Vehicles";
@@ -11,8 +13,20 @@ import SupervisorsPage from "./pages/SupervisorsPage";
 import InspectionHistory from "./pages/InspectionHistory";
 import { DashboardLayout } from "./components/DashboardLayout";
 import NotFound from "./pages/NotFound";
+import AuthForm from "./components/AuthForm";
+import { useNavigate } from "react-router-dom";
 
 const queryClient = new QueryClient();
+
+const AuthPage = () => {
+  const navigate = useNavigate();
+  
+  const handleAuthSuccess = () => {
+    navigate('/dashboard');
+  };
+
+  return <AuthForm onAuthSuccess={handleAuthSuccess} />;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -20,32 +34,43 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/signin" element={<Index />} />
-          <Route path="/inspection" element={<Index />} />
-          <Route path="/dashboard" element={
-            <DashboardLayout>
-              <Dashboard />
-            </DashboardLayout>
-          } />
-          <Route path="/vehicles" element={
-            <DashboardLayout>
-              <Vehicles />
-            </DashboardLayout>
-          } />
-          <Route path="/supervisors" element={
-            <DashboardLayout>
-              <SupervisorsPage />
-            </DashboardLayout>
-          } />
-          <Route path="/history" element={
-            <DashboardLayout>
-              <InspectionHistory />
-            </DashboardLayout>
-          } />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<AuthPage />} />
+            <Route path="/signin" element={<AuthPage />} />
+            <Route path="/inspection" element={<Index />} />
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <Dashboard />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/vehicles" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <Vehicles />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/supervisors" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <SupervisorsPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/history" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <InspectionHistory />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

@@ -80,7 +80,7 @@ const DriverSignIn = ({ onSignIn, onGoToDashboard }: DriverSignInProps) => {
               </Button>
             </form>
             
-            <div className="text-center">
+            <div className="text-center space-y-2">
               <Button 
                 variant="outline"
                 onClick={onGoToDashboard}
@@ -88,6 +88,13 @@ const DriverSignIn = ({ onSignIn, onGoToDashboard }: DriverSignInProps) => {
               >
                 Go to Dashboard
               </Button>
+              
+              <div className="text-sm text-slate-600">
+                <span>Need admin access? </span>
+                <a href="/auth" className="text-emerald-700 hover:text-emerald-800 underline">
+                  Sign in here
+                </a>
+              </div>
             </div>
           </CardContent>
         </Card>
