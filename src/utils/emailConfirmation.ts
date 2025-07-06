@@ -6,11 +6,16 @@ export const sendInspectionConfirmation = async (inspectionData: any, supervisor
     console.log('Sending inspection confirmation email...');
     console.log('Inspection data being sent:', inspectionData);
     
+    // Extract vehicle name properly
+    const vehicleName = inspectionData.selectedVehicle?.name 
+      ? `${inspectionData.selectedVehicle.name} (${inspectionData.selectedVehicle.plate_number})`
+      : inspectionData.vehicleName || 'Unknown Vehicle';
+    
     const { data, error } = await supabase.functions.invoke('send-inspection-confirmation', {
       body: {
         inspectionData: {
           driverName,
-          vehicleName: inspectionData.selectedVehicle || inspectionData.vehicleName,
+          vehicleName,
           date: inspectionData.date,
           time: inspectionData.time,
           odometerStart: inspectionData.odometerStart,

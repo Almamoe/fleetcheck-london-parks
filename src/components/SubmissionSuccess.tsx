@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -5,9 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Mail, CheckCircle, AlertCircle } from 'lucide-react';
+import { Mail, CheckCircle, AlertCircle, Download } from 'lucide-react';
 import { sendToSlack, getSlackSetupInstructions } from '@/utils/slackIntegration';
 import { sendInspectionConfirmation } from '@/utils/emailConfirmation';
+import { downloadInspectionPDF } from '@/utils/pdfGenerator';
 import { useToast } from '@/components/ui/use-toast';
 
 interface SubmissionSuccessProps {
@@ -110,7 +112,31 @@ const SubmissionSuccess = ({ inspectionData, onNewInspection, onGoToDashboard }:
     }
   };
 
+  const handleDownloadPDF = () => {
+    try {
+      const result = downloadInspectionPDF(inspectionData);
+      if (result.success) {
+        toast({
+          title: "PDF Generated!",
+          description: `Report ${result.reportId} is ready for download/print`,
+        });
+      }
+    } catch (error) {
+      console.error('Failed to generate PDF:', error);
+      toast({
+        title: "PDF Generation Failed",
+        description: "There was an error generating the PDF report",
+        variant: "destructive",
+      });
+    }
+  };
+
   const reportId = generateReportId();
+
+  // Extract vehicle name properly
+  const vehicleName = inspectionData.selectedVehicle?.name 
+    ? `${inspectionData.selectedVehicle.name} (${inspectionData.selectedVehicle.plate_number})`
+    : inspectionData.vehicleName || 'Unknown Vehicle';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-50 p-4 flex items-center justify-center">
@@ -148,12 +174,10 @@ const SubmissionSuccess = ({ inspectionData, onNewInspection, onGoToDashboard }:
               <span className="text-emerald-700">{inspectionData.driverName}</span>
             </div>
 
-            {inspectionData.vehicleName && (
-              <div className="flex justify-between items-center">
-                <span className="font-medium text-emerald-800">Vehicle:</span>
-                <span className="text-emerald-700">{inspectionData.vehicleName}</span>
-              </div>
-            )}
+            <div className="flex justify-between items-center">
+              <span className="font-medium text-emerald-800">Vehicle:</span>
+              <span className="text-emerald-700">{vehicleName}</span>
+            </div>
 
             {inspectionData.supervisor && (
               <div className="flex justify-between items-center">
@@ -164,6 +188,24 @@ const SubmissionSuccess = ({ inspectionData, onNewInspection, onGoToDashboard }:
                 </div>
               </div>
             )}
+          </div>
+
+          {/* PDF Download Button */}
+          <div className="bg-white rounded-lg p-6 border border-emerald-200">
+            <h3 className="text-lg font-semibold text-emerald-800 mb-4 flex items-center">
+              <Download className="mr-2 h-5 w-5" />
+              Download Report
+            </h3>
+            <p className="text-emerald-700 text-sm mb-4">
+              Generate a PDF report of this inspection for your records or printing.
+            </p>
+            <Button 
+              onClick={handleDownloadPDF}
+              className="w-full h-12 text-base bg-emerald-700 hover:bg-emerald-800 text-white font-medium"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Download PDF Report
+            </Button>
           </div>
 
           <Tabs defaultValue="email" className="w-full">
