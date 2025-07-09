@@ -30,7 +30,9 @@ export const useUserRole = () => {
         console.error('Error fetching user role:', error);
         setRole('user');
       } else {
-        setRole(data?.role || 'user');
+        // Ensure we only set valid UserRole values
+        const userRole = data?.role === 'admin' ? 'admin' : 'user';
+        setRole(userRole);
       }
       
       setLoading(false);
