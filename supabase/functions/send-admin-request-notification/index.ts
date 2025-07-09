@@ -97,11 +97,28 @@ const handler = async (req: Request): Promise<Response> => {
                 <div class="approval-section">
                     <h3 style="color: #0ea5e9; margin-top: 0;">Quick Approval</h3>
                     <p>Click the button below to approve this admin access request:</p>
-                    <a href="${approvalUrl}" class="approve-button">✅ Approve Admin Access</a>
+                    <a href="#" onclick="approveRequest('${approvalUrl}')" class="approve-button">✅ Approve Admin Access</a>
                     <p style="font-size: 12px; color: #6b7280; margin-top: 15px;">
                         This will grant <strong>${email}</strong> admin access to FleetCheck immediately.
                     </p>
                 </div>
+                
+                <script>
+                async function approveRequest(url) {
+                    try {
+                        const response = await fetch(url);
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            alert('✅ Admin request approved successfully!\\n\\nUser: ' + result.details.name + '\\nEmail: ' + result.details.email + ' now has admin access.');
+                        } else {
+                            alert('❌ ' + result.message);
+                        }
+                    } catch (error) {
+                        alert('❌ Error processing approval: ' + error.message);
+                    }
+                }
+                </script>
 
                 <div class="warning">
                     <strong>⚠️ Security Notice:</strong> Only approve this request if you recognize the applicant and their need for admin access is legitimate. Admin users have full access to all FleetCheck features and data.

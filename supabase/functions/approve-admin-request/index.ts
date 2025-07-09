@@ -55,26 +55,13 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     if (!adminRequest) {
-      return new Response(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Admin Request Not Found</title>
-            <style>
-                body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-                .message { background: #f44336; color: white; padding: 20px; border-radius: 8px; display: inline-block; }
-            </style>
-        </head>
-        <body>
-            <div class="message">
-                <h2>❌ Admin Request Not Found</h2>
-                <p>The admin request for ${email} was not found or has already been processed.</p>
-            </div>
-        </body>
-        </html>
-      `, {
+      return new Response(JSON.stringify({
+        success: false,
+        error: "Admin request not found or already processed",
+        message: `The admin request for ${email} was not found or has already been processed.`
+      }), {
         status: 404,
-        headers: { "Content-Type": "text/html", ...corsHeaders }
+        headers: { "Content-Type": "application/json", ...corsHeaders }
       });
     }
 
@@ -105,40 +92,19 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Admin request approved for: ${email}`);
 
-    // Return success page
-    return new Response(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-          <title>Admin Request Approved</title>
-          <style>
-              body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background-color: #f5f5f5; }
-              .message { background: #4CAF50; color: white; padding: 30px; border-radius: 8px; display: inline-block; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-              .details { background: white; padding: 20px; margin-top: 20px; border-radius: 8px; color: #333; }
-              .user-info { text-align: left; margin: 15px 0; }
-              .label { font-weight: bold; color: #666; }
-          </style>
-      </head>
-      <body>
-          <div class="message">
-              <h2>✅ Admin Request Approved!</h2>
-              <p>The admin access request has been successfully approved.</p>
-          </div>
-          <div class="details">
-              <h3>Request Details:</h3>
-              <div class="user-info">
-                  <div><span class="label">Name:</span> ${adminRequest.name}</div>
-                  <div><span class="label">Email:</span> ${adminRequest.email}</div>
-                  <div><span class="label">Department:</span> ${adminRequest.department}</div>
-                  <div><span class="label">Reason:</span> ${adminRequest.reason}</div>
-              </div>
-              <p><strong>${adminRequest.email}</strong> now has admin access to FleetCheck.</p>
-          </div>
-      </body>
-      </html>
-    `, {
+    // Return JSON response instead of HTML page
+    return new Response(JSON.stringify({ 
+      success: true, 
+      message: "Admin request approved successfully",
+      details: {
+        name: adminRequest.name,
+        email: adminRequest.email,
+        department: adminRequest.department,
+        reason: adminRequest.reason
+      }
+    }), {
       status: 200,
-      headers: { "Content-Type": "text/html", ...corsHeaders }
+      headers: { "Content-Type": "application/json", ...corsHeaders }
     });
 
   } catch (error: any) {
