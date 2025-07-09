@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import AdminRequestModal from '@/components/AdminRequestModal';
 
 interface AuthFormProps {
   onAuthSuccess: () => void;
@@ -166,14 +167,15 @@ const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
                     <p className="text-sm text-emerald-600 mb-2">
                       Need admin access?
                     </p>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="text-emerald-700 border-emerald-300 hover:bg-emerald-50"
-                      onClick={() => window.open('/admin-request', '_blank')}
-                    >
-                      Request Admin Access
-                    </Button>
+                    <AdminRequestModal>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="text-emerald-700 border-emerald-300 hover:bg-emerald-50"
+                      >
+                        Request Admin Access
+                      </Button>
+                    </AdminRequestModal>
                   </div>
                   <Button
                     type="submit"
