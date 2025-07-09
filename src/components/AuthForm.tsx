@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -162,6 +161,19 @@ const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
                       required
                       className="border-emerald-300 focus:border-emerald-500"
                     />
+                  </div>
+                  <div className="text-center pt-4 border-t border-emerald-200">
+                    <p className="text-sm text-emerald-600 mb-2">
+                      Need admin access?
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="text-emerald-700 border-emerald-300 hover:bg-emerald-50"
+                      onClick={() => window.open('/admin-request', '_blank')}
+                    >
+                      Request Admin Access
+                    </Button>
                   </div>
                   <Button
                     type="submit"
