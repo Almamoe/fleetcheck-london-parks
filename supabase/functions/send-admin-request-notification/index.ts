@@ -28,6 +28,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Sending admin request notification email...');
     
+    // Generate approval token (simple base64 encoding - in production use JWT or similar)
+    const approvalToken = btoa(email + 'approval_secret_key');
+    const approvalUrl = `https://pibwxhhrjerjyxcqokzd.supabase.co/functions/v1/approve-admin-request?email=${encodeURIComponent(email)}&token=${approvalToken}`;
+    
     const emailResponse = await resend.emails.send({
       from: "FleetCheck Admin <onboarding@resend.dev>",
       to: ["almamoha664@gmail.com"], // Your specified email - can be changed later
@@ -46,6 +50,20 @@ const handler = async (req: Request): Promise<Response> => {
                 .info-label { font-weight: bold; color: #374151; display: block; margin-bottom: 4px; }
                 .info-value { color: #6b7280; }
                 .reason { background-color: #f3f4f6; padding: 15px; border-radius: 6px; white-space: pre-wrap; }
+                .approval-section { text-align: center; margin: 30px 0; padding: 20px; background-color: #f0f9ff; border-radius: 8px; border: 1px solid #0ea5e9; }
+                .approve-button { 
+                    display: inline-block; 
+                    background-color: #059669; 
+                    color: white; 
+                    padding: 15px 30px; 
+                    text-decoration: none; 
+                    border-radius: 6px; 
+                    font-weight: bold; 
+                    font-size: 16px;
+                    margin: 10px 0;
+                }
+                .approve-button:hover { background-color: #047857; }
+                .warning { background-color: #fef3c7; padding: 15px; border-radius: 6px; margin-top: 20px; border-left: 4px solid #f59e0b; }
                 .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 12px; }
             </style>
         </head>
@@ -76,9 +94,22 @@ const handler = async (req: Request): Promise<Response> => {
                     <div class="reason">${reason}</div>
                 </div>
 
+                <div class="approval-section">
+                    <h3 style="color: #0ea5e9; margin-top: 0;">Quick Approval</h3>
+                    <p>Click the button below to approve this admin access request:</p>
+                    <a href="${approvalUrl}" class="approve-button">✅ Approve Admin Access</a>
+                    <p style="font-size: 12px; color: #6b7280; margin-top: 15px;">
+                        This will grant <strong>${email}</strong> admin access to FleetCheck immediately.
+                    </p>
+                </div>
+
+                <div class="warning">
+                    <strong>⚠️ Security Notice:</strong> Only approve this request if you recognize the applicant and their need for admin access is legitimate. Admin users have full access to all FleetCheck features and data.
+                </div>
+
                 <div class="footer">
                     <p>Request submitted on ${new Date().toLocaleString()}</p>
-                    <p>Please review this request and take appropriate action in the FleetCheck admin panel.</p>
+                    <p>If you cannot approve via the button above, please review this request manually in the FleetCheck admin panel.</p>
                 </div>
             </div>
         </body>
