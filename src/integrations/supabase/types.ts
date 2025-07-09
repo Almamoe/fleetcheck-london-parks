@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_requests: {
+        Row: {
+          created_at: string
+          department: string
+          email: string
+          id: string
+          name: string
+          reason: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          department: string
+          email: string
+          id?: string
+          name: string
+          reason: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          department?: string
+          email?: string
+          id?: string
+          name?: string
+          reason?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      admin_users: {
+        Row: {
+          approved: boolean
+          created_at: string
+          email: string
+          id: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          approved?: boolean
+          created_at?: string
+          email: string
+          id?: string
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          approved?: boolean
+          created_at?: string
+          email?: string
+          id?: string
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       drivers: {
         Row: {
           created_at: string
