@@ -23,7 +23,8 @@ const AdminRequestForm = () => {
     setLoading(true);
 
     try {
-      const { error } = await supabase
+      // Insert the admin request into the database
+      const { error: insertError } = await supabase
         .from('admin_requests')
         .insert({
           email: user.email,
@@ -33,11 +34,31 @@ const AdminRequestForm = () => {
           status: 'pending'
         });
 
-      if (error) throw error;
+      if (insertError) throw insertError;
+
+      // Send email notification
+      try {
+        const { error: emailError } = await supabase.functions.invoke('send-admin-request-notification', {
+          body: {
+            name: user.user_metadata?.full_name || user.email,
+            email: user.email,
+            department,
+            reason
+          }
+        });
+
+        if (emailError) {
+          console.error('Email notification failed:', emailError);
+          // Don't throw here - the request was still saved successfully
+        }
+      } catch (emailError) {
+        console.error('Email notification failed:', emailError);
+        // Continue - the request was saved successfully
+      }
 
       toast({
         title: "Request Submitted",
-        description: "Your admin access request has been submitted for review.",
+        description: "Your admin access request has been submitted for review and notification sent.",
       });
 
       setReason('');
