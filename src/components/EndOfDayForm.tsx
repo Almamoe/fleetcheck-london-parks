@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface EndOfDayFormProps {
   driverName: string;
@@ -22,7 +23,46 @@ const EndOfDayForm = ({ driverName, startData, onSubmit }: EndOfDayFormProps) =>
     damageReport: '',
     hasPhoto: false,
     notes: '',
+    equipment: {
+      tires: false,
+      lights: false,
+      brakes: false,
+      mirrors: false,
+      seatBelts: false,
+      horn: false,
+      windshieldWipers: false,
+      fluidLeaks: false,
+      bodyDamage: false,
+      engineIssues: false,
+      brakePedal: false,
+      steeringWheel: false,
+    },
   });
+
+  const equipmentItems = [
+    { key: 'tires', label: 'Tires (damage, wear, pressure)' },
+    { key: 'lights', label: 'Lights (headlights, taillights, turn signals)' },
+    { key: 'brakes', label: 'Brakes (performance issues)' },
+    { key: 'mirrors', label: 'Mirrors (damage, visibility)' },
+    { key: 'seatBelts', label: 'Seat belts (functionality)' },
+    { key: 'horn', label: 'Horn (working properly)' },
+    { key: 'windshieldWipers', label: 'Windshield wipers' },
+    { key: 'fluidLeaks', label: 'Fluid leaks' },
+    { key: 'bodyDamage', label: 'Body damage' },
+    { key: 'engineIssues', label: 'Engine issues' },
+    { key: 'brakePedal', label: 'Brake pedal (soft, hard, vibration)' },
+    { key: 'steeringWheel', label: 'Steering wheel (looseness, vibration)' },
+  ];
+
+  const handleEquipmentChange = (item: string, checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      equipment: {
+        ...prev.equipment,
+        [item]: checked
+      }
+    }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,6 +124,36 @@ const EndOfDayForm = ({ driverName, startData, onSubmit }: EndOfDayFormProps) =>
                 </p>
               </div>
             )}
+
+            <div className="space-y-4">
+              <div className="border border-emerald-200 rounded-lg p-4 bg-red-50">
+                <Label className="text-base font-semibold text-emerald-800 mb-3 block">
+                  End of Day Equipment Inspection
+                </Label>
+                <p className="text-sm text-emerald-600 mb-4">
+                  Check any items that have issues or problems:
+                </p>
+               
+                <div className="grid grid-cols-2 gap-4">
+                  {equipmentItems.map((item) => (
+                    <div key={item.key} className="flex items-center space-x-3">
+                      <Checkbox
+                        id={item.key}
+                        checked={formData.equipment[item.key as keyof typeof formData.equipment]}
+                        onCheckedChange={(checked) => handleEquipmentChange(item.key, checked as boolean)}
+                        className="h-5 w-5 border-red-400 data-[state=checked]:bg-red-600"
+                      />
+                      <Label 
+                        htmlFor={item.key} 
+                        className="text-sm font-medium cursor-pointer select-none text-emerald-800"
+                      >
+                        {item.label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
 
             <div className="space-y-2">
               <Label className="text-sm font-medium text-emerald-800">
