@@ -34,12 +34,12 @@ const ReviewInspection: React.FC<ReviewInspectionProps> = ({
     if (!equipment) return [];
     return Object.entries(equipment).map(([key, value]) => ({
       name: key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
-      status: value as string
+      status: value === true ? 'Issues Found' : 'Good'
     }));
   };
 
   const equipmentItems = getEquipmentStatus(startOfDayData?.equipment || {});
-  const hasIssues = equipmentItems.some(item => item.status === 'damaged' || item.status === 'missing');
+  const hasIssues = equipmentItems.some(item => item.status === 'Issues Found');
 
   return (
     <div className="min-h-screen bg-background p-4">
@@ -135,10 +135,7 @@ const ReviewInspection: React.FC<ReviewInspectionProps> = ({
                 <div key={item.name} className="flex items-center justify-between p-3 rounded-lg border">
                   <span className="text-sm font-medium">{item.name}</span>
                   <Badge 
-                    variant={
-                      item.status === 'good' ? 'default' : 
-                      item.status === 'damaged' ? 'destructive' : 'secondary'
-                    }
+                    variant={item.status === 'Good' ? 'default' : 'destructive'}
                   >
                     {item.status}
                   </Badge>
