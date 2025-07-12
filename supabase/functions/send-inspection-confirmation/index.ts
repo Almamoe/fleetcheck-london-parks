@@ -48,15 +48,19 @@ const handler = async (req: Request): Promise<Response> => {
     
     // Process end of day equipment
     if (inspectionData.endEquipment) {
+      console.log('Processing endEquipment:', inspectionData.endEquipment);
       const endIssues = Object.entries(inspectionData.endEquipment)
         .filter(([_, value]) => value === true)
         .map(([key, _]) => key.replace(/([A-Z])/g, ' $1').trim());
+      console.log('End issues found:', endIssues);
       endEquipmentIssues.push(...endIssues);
     }
     
     // Combine all equipment issues
     const allIssues = [...startEquipmentIssues, ...endEquipmentIssues];
+    console.log('All issues combined:', allIssues);
     const equipmentIssues = allIssues.length > 0 ? allIssues.join(', ') : 'None reported';
+    console.log('Final equipment issues string:', equipmentIssues);
 
     // Calculate total miles
     const odometerStart = inspectionData.odometerStart;
