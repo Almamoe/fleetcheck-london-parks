@@ -55,6 +55,7 @@ const Index = () => {
   };
 
   const handleSignature = (signature: string) => {
+    console.log('Signature captured, moving to review step');
     setSignatureData(signature);
     setCurrentStep('review');
   };
@@ -171,6 +172,7 @@ const Index = () => {
   };
 
   const renderCurrentStep = () => {
+    console.log('Current step:', currentStep);
     switch (currentStep) {
       case 'signin':
         return <DriverSignIn onSignIn={handleSignIn} onGoToDashboard={handleGoToDashboard} />;
