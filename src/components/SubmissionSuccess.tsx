@@ -1,13 +1,8 @@
-
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Mail, CheckCircle, AlertCircle, Download } from 'lucide-react';
-import { sendToSlack, getSlackSetupInstructions } from '@/utils/slackIntegration';
 import { sendInspectionConfirmation } from '@/utils/emailConfirmation';
 import { downloadInspectionPDF } from '@/utils/pdfGenerator';
 import { useToast } from '@/components/ui/use-toast';
@@ -20,56 +15,13 @@ interface SubmissionSuccessProps {
 
 const SubmissionSuccess = ({ inspectionData, onNewInspection, onGoToDashboard }: SubmissionSuccessProps) => {
   const { toast } = useToast();
-  const [webhookUrl, setWebhookUrl] = useState('');
-  const [isSubmittingSlack, setIsSubmittingSlack] = useState(false);
   const [isSubmittingEmail, setIsSubmittingEmail] = useState(false);
-  const [slackStatus, setSlackStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [emailStatus, setEmailStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [errorMessage, setErrorMessage] = useState('');
-  const [showInstructions, setShowInstructions] = useState(false);
 
   const generateReportId = () => {
     const date = new Date().toISOString().split('T')[0].replace(/-/g, '');
     const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
     return `FL-${date}-${random}`;
-  };
-
-  // Load saved Slack webhook URL
-  useEffect(() => {
-    const savedUrl = localStorage.getItem('fleetcheck-slack-webhook');
-    if (savedUrl) {
-      setWebhookUrl(savedUrl);
-    }
-  }, []);
-
-  const handleSendToSlack = async () => {
-    if (!webhookUrl.trim()) {
-      alert('Please enter your Slack webhook URL first.');
-      return;
-    }
-
-    setIsSubmittingSlack(true);
-    setSlackStatus('idle');
-    setErrorMessage('');
-
-    try {
-      console.log('=== SENDING TO SLACK ===');
-      console.log('Using webhook URL:', webhookUrl);
-      
-      // Save the URL for future use
-      localStorage.setItem('fleetcheck-slack-webhook', webhookUrl);
-      
-      await sendToSlack(inspectionData, webhookUrl);
-      
-      setSlackStatus('success');
-      console.log('Successfully sent to Slack');
-    } catch (error) {
-      console.error('Failed to send to Slack:', error);
-      setSlackStatus('error');
-      setErrorMessage(error instanceof Error ? error.message : 'Unknown error occurred');
-    } finally {
-      setIsSubmittingSlack(false);
-    }
   };
 
   const handleSendEmailConfirmation = async () => {
@@ -208,138 +160,66 @@ const SubmissionSuccess = ({ inspectionData, onNewInspection, onGoToDashboard }:
             </Button>
           </div>
 
-          <Tabs defaultValue="email" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="email">📧 Email</TabsTrigger>
-              <TabsTrigger value="slack">💬 Slack</TabsTrigger>
-            </TabsList>
+          {/* Email Section */}
+          <div className="bg-white rounded-lg p-6 border border-emerald-200 space-y-4">
+            <h3 className="text-lg font-semibold text-emerald-800 mb-4 flex items-center">
+              <Mail className="mr-2 h-5 w-5" />
+              Send Email Confirmation
+            </h3>
             
-            <TabsContent value="email" className="space-y-4">
-              <div className="bg-white rounded-lg p-6 border border-emerald-200 space-y-4">
-                <h3 className="text-lg font-semibold text-emerald-800 mb-4 flex items-center">
-                  <Mail className="mr-2 h-5 w-5" />
-                  Send Email Confirmation
-                </h3>
-                
-                {inspectionData.supervisor && (
-                  <div className="bg-emerald-50 p-4 rounded-lg">
-                    <p className="text-sm text-emerald-700 mb-2">
-                      <strong>Email will be sent to:</strong>
-                    </p>
-                    <div className="text-emerald-800">
-                      <div className="font-medium">{inspectionData.supervisor.name}</div>
-                      <div className="text-sm">{inspectionData.supervisor.email}</div>
-                      <div className="text-sm text-emerald-600">{inspectionData.supervisor.department}</div>
-                    </div>
-                  </div>
-                )}
-
-                {emailStatus === 'success' && (
-                  <div className="bg-green-50 border border-green-300 rounded-lg p-4 flex items-start">
-                    <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 mr-3 flex-shrink-0" />
-                    <div>
-                      <p className="text-green-800 font-medium">Email Sent Successfully!</p>
-                      <p className="text-green-700 text-sm mt-1">
-                        The inspection report has been sent to {inspectionData.supervisor?.name}.
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {emailStatus === 'error' && (
-                  <div className="bg-red-50 border border-red-300 rounded-lg p-4 flex items-start">
-                    <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 mr-3 flex-shrink-0" />
-                    <div>
-                      <p className="text-red-800 font-medium">Failed to send email</p>
-                      <p className="text-red-700 text-sm mt-1">Please check your Resend configuration and try again.</p>
-                    </div>
-                  </div>
-                )}
-
-                <Button 
-                  onClick={handleSendEmailConfirmation}
-                  disabled={isSubmittingEmail || !inspectionData.supervisor?.email}
-                  className="w-full h-12 text-base bg-emerald-700 hover:bg-emerald-800 text-white font-medium"
-                >
-                  {isSubmittingEmail ? (
-                    <>
-                      <Mail className="mr-2 h-4 w-4 animate-pulse" />
-                      Sending Email...
-                    </>
-                  ) : (
-                    <>
-                      <Mail className="mr-2 h-4 w-4" />
-                      Send Email to Supervisor
-                    </>
-                  )}
-                </Button>
+            {inspectionData.supervisor && (
+              <div className="bg-emerald-50 p-4 rounded-lg">
+                <p className="text-sm text-emerald-700 mb-2">
+                  <strong>Email will be sent to:</strong>
+                </p>
+                <div className="text-emerald-800">
+                  <div className="font-medium">{inspectionData.supervisor.name}</div>
+                  <div className="text-sm">{inspectionData.supervisor.email}</div>
+                  <div className="text-sm text-emerald-600">{inspectionData.supervisor.department}</div>
+                </div>
               </div>
-            </TabsContent>
-            
-            <TabsContent value="slack" className="space-y-4">
-              <div className="bg-white rounded-lg p-6 border border-emerald-200 space-y-4">
-                <h3 className="text-lg font-semibold text-emerald-800 mb-4">💬 Send to Slack</h3>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="webhookUrl" className="text-sm font-medium text-emerald-800">
-                    Slack Webhook URL
-                  </Label>
-                  <Input
-                    id="webhookUrl"
-                    type="url"
-                    value={webhookUrl}
-                    onChange={(e) => setWebhookUrl(e.target.value)}
-                    placeholder="https://hooks.slack.com/services/..."
-                    className="border-emerald-300 focus:border-emerald-500"
-                  />
-                  <p className="text-xs text-emerald-600">
-                    Enter your Slack webhook URL to send inspection reports to your Slack channel
+            )}
+
+            {emailStatus === 'success' && (
+              <div className="bg-green-50 border border-green-300 rounded-lg p-4 flex items-start">
+                <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 mr-3 flex-shrink-0" />
+                <div>
+                  <p className="text-green-800 font-medium">Email Sent Successfully!</p>
+                  <p className="text-green-700 text-sm mt-1">
+                    The inspection report has been sent to {inspectionData.supervisor?.name}.
                   </p>
                 </div>
-
-                {slackStatus === 'success' && (
-                  <div className="bg-green-50 border border-green-300 rounded-lg p-4">
-                    <p className="text-green-800 font-medium">✅ Successfully sent to Slack!</p>
-                    <p className="text-green-700 text-sm">The inspection report has been posted to your Slack channel.</p>
-                  </div>
-                )}
-
-                {slackStatus === 'error' && (
-                  <div className="bg-red-50 border border-red-300 rounded-lg p-4">
-                    <p className="text-red-800 font-medium">❌ Failed to send to Slack</p>
-                    <p className="text-red-700 text-sm">{errorMessage}</p>
-                  </div>
-                )}
-
-                <Button 
-                  onClick={handleSendToSlack}
-                  disabled={isSubmittingSlack}
-                  className="w-full h-12 text-base bg-emerald-700 hover:bg-emerald-800 text-white font-medium"
-                >
-                  {isSubmittingSlack ? '💬 Sending...' : '💬 Send to Slack'}
-                </Button>
-
-                <Button
-                  onClick={() => setShowInstructions(!showInstructions)}
-                  variant="outline"
-                  className="w-full border-emerald-600 text-emerald-700 hover:bg-emerald-50"
-                >
-                  {showInstructions ? 'Hide Instructions' : '📋 Setup Instructions'}
-                </Button>
-
-                {showInstructions && (
-                  <div className="bg-blue-50 border border-blue-300 rounded-lg p-4 space-y-3">
-                    <h4 className="font-semibold text-blue-800">Slack Setup Instructions:</h4>
-                    <ol className="text-blue-700 text-sm space-y-2 list-decimal list-inside">
-                      {getSlackSetupInstructions().map((instruction, index) => (
-                        <li key={index}>{instruction}</li>
-                      ))}
-                    </ol>
-                  </div>
-                )}
               </div>
-            </TabsContent>
-          </Tabs>
+            )}
+
+            {emailStatus === 'error' && (
+              <div className="bg-red-50 border border-red-300 rounded-lg p-4 flex items-start">
+                <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 mr-3 flex-shrink-0" />
+                <div>
+                  <p className="text-red-800 font-medium">Failed to send email</p>
+                  <p className="text-red-700 text-sm mt-1">Please check your Resend configuration and try again.</p>
+                </div>
+              </div>
+            )}
+
+            <Button 
+              onClick={handleSendEmailConfirmation}
+              disabled={isSubmittingEmail || !inspectionData.supervisor?.email}
+              className="w-full h-12 text-base bg-emerald-700 hover:bg-emerald-800 text-white font-medium"
+            >
+              {isSubmittingEmail ? (
+                <>
+                  <Mail className="mr-2 h-4 w-4 animate-pulse" />
+                  Sending Email...
+                </>
+              ) : (
+                <>
+                  <Mail className="mr-2 h-4 w-4" />
+                  Send Email to Supervisor
+                </>
+              )}
+            </Button>
+          </div>
 
           <div className="flex gap-4">
             <Button 
