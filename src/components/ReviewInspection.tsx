@@ -38,8 +38,10 @@ const ReviewInspection: React.FC<ReviewInspectionProps> = ({
     }));
   };
 
-  const equipmentItems = getEquipmentStatus(startOfDayData?.equipment || {});
-  const hasIssues = equipmentItems.some(item => item.status === 'Issues Found');
+  const startEquipmentItems = getEquipmentStatus(startOfDayData?.equipment || {});
+  const endEquipmentItems = getEquipmentStatus(endOfDayData?.equipment || {});
+  const hasStartIssues = startEquipmentItems.some(item => item.status === 'Issues Found');
+  const hasEndIssues = endEquipmentItems.some(item => item.status === 'Issues Found');
 
   return (
     <div className="min-h-screen bg-background p-4">
@@ -121,7 +123,7 @@ const ReviewInspection: React.FC<ReviewInspectionProps> = ({
             <CardTitle className="flex items-center gap-2">
               <Wrench className="w-5 h-5 text-primary" />
               Equipment Status
-              {hasIssues && (
+              {(hasStartIssues || hasEndIssues) && (
                 <Badge variant="destructive" className="ml-2">
                   <AlertTriangle className="w-3 h-3 mr-1" />
                   Issues Found
@@ -129,19 +131,42 @@ const ReviewInspection: React.FC<ReviewInspectionProps> = ({
               )}
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-3 gap-3">
-              {equipmentItems.map((item) => (
-                <div key={item.name} className="flex items-center justify-between p-3 rounded-lg border">
-                  <span className="text-sm font-medium">{item.name}</span>
-                  <Badge 
-                    variant={item.status === 'Good' ? 'default' : 'destructive'}
-                  >
-                    {item.status}
-                  </Badge>
-                </div>
-              ))}
+          <CardContent className="space-y-6">
+            {/* Start of Day Equipment */}
+            <div>
+              <h4 className="font-medium mb-3 text-sm text-muted-foreground">Start of Day Equipment Inspection</h4>
+              <div className="grid md:grid-cols-3 gap-3">
+                {startEquipmentItems.map((item) => (
+                  <div key={`start-${item.name}`} className="flex items-center justify-between p-3 rounded-lg border">
+                    <span className="text-sm font-medium">{item.name}</span>
+                    <Badge 
+                      variant={item.status === 'Good' ? 'default' : 'destructive'}
+                    >
+                      {item.status}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
             </div>
+
+            {/* End of Day Equipment */}
+            {endEquipmentItems.length > 0 && (
+              <div>
+                <h4 className="font-medium mb-3 text-sm text-muted-foreground">End of Day Equipment Inspection</h4>
+                <div className="grid md:grid-cols-3 gap-3">
+                  {endEquipmentItems.map((item) => (
+                    <div key={`end-${item.name}`} className="flex items-center justify-between p-3 rounded-lg border">
+                      <span className="text-sm font-medium">{item.name}</span>
+                      <Badge 
+                        variant={item.status === 'Good' ? 'default' : 'destructive'}
+                      >
+                        {item.status}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -161,10 +186,10 @@ const ReviewInspection: React.FC<ReviewInspectionProps> = ({
               </div>
             )}
             
-            {endOfDayData?.endNotes && (
+            {endOfDayData?.notes && (
               <div>
                 <label className="text-sm font-medium text-muted-foreground">End of Day Notes</label>
-                <p className="mt-1 p-3 bg-muted rounded-lg">{endOfDayData.endNotes}</p>
+                <p className="mt-1 p-3 bg-muted rounded-lg">{endOfDayData.notes}</p>
               </div>
             )}
             
