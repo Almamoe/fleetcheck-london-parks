@@ -34,15 +34,29 @@ const handler = async (req: Request): Promise<Response> => {
     // Generate report ID
     const reportId = `FL-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
 
-    // Prepare equipment status - handle both formats
-    let equipmentIssues = 'None reported';
+    // Prepare equipment status - handle both start and end of day equipment
+    const startEquipmentIssues: string[] = [];
+    const endEquipmentIssues: string[] = [];
+    
+    // Process start of day equipment
     if (inspectionData.equipment) {
-      const issues = Object.entries(inspectionData.equipment)
+      const startIssues = Object.entries(inspectionData.equipment)
         .filter(([_, value]) => value === true)
-        .map(([key, _]) => key.replace(/([A-Z])/g, ' $1').trim())
-        .join(', ');
-      equipmentIssues = issues || 'None reported';
+        .map(([key, _]) => key.replace(/([A-Z])/g, ' $1').trim());
+      startEquipmentIssues.push(...startIssues);
     }
+    
+    // Process end of day equipment
+    if (inspectionData.endEquipment) {
+      const endIssues = Object.entries(inspectionData.endEquipment)
+        .filter(([_, value]) => value === true)
+        .map(([key, _]) => key.replace(/([A-Z])/g, ' $1').trim());
+      endEquipmentIssues.push(...endIssues);
+    }
+    
+    // Combine all equipment issues
+    const allIssues = [...startEquipmentIssues, ...endEquipmentIssues];
+    const equipmentIssues = allIssues.length > 0 ? allIssues.join(', ') : 'None reported';
 
     // Calculate total miles
     const odometerStart = inspectionData.odometerStart;
