@@ -5,11 +5,12 @@ import DriverSignIn from '@/components/DriverSignIn';
 import StartOfDayForm from '@/components/StartOfDayForm';
 import EndOfDayForm from '@/components/EndOfDayForm';
 import DigitalSignature from '@/components/DigitalSignature';
+import ReviewInspection from '@/components/ReviewInspection';
 import SupervisorSelection from '@/components/SupervisorSelection';
 import SubmissionSuccess from '@/components/SubmissionSuccess';
 import { createOrGetDriver, createOrGetVehicle, createOrGetSupervisor, saveInspection } from '@/utils/supabaseOperations';
 
-type InspectionStep = 'signin' | 'startday' | 'endday' | 'signature' | 'supervisor' | 'success';
+type InspectionStep = 'signin' | 'startday' | 'endday' | 'signature' | 'review' | 'supervisor' | 'success';
 
 interface Supervisor {
   id: string;
@@ -55,7 +56,15 @@ const Index = () => {
 
   const handleSignature = (signature: string) => {
     setSignatureData(signature);
+    setCurrentStep('review');
+  };
+
+  const handleReviewProceed = () => {
     setCurrentStep('supervisor');
+  };
+
+  const handleReviewBack = () => {
+    setCurrentStep('signature');
   };
 
   const handleSupervisorSelection = async (supervisor: Supervisor) => {
@@ -188,6 +197,18 @@ const Index = () => {
           <DigitalSignature 
             driverName={driverInfo.name}
             onSignature={handleSignature} 
+          />
+        );
+
+      case 'review':
+        return (
+          <ReviewInspection
+            driverInfo={driverInfo}
+            startOfDayData={startOfDayData}
+            endOfDayData={endOfDayData}
+            signatureData={signatureData}
+            onProceed={handleReviewProceed}
+            onBack={handleReviewBack}
           />
         );
 
