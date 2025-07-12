@@ -1,8 +1,6 @@
 
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import AuthForm from './AuthForm';
-import { useNavigate } from 'react-router-dom';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -10,11 +8,6 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, loading } = useAuth();
-  const navigate = useNavigate();
-
-  const handleAuthSuccess = () => {
-    navigate('/dashboard');
-  };
 
   if (loading) {
     return (
@@ -31,10 +24,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     );
   }
 
-  if (!user) {
-    return <AuthForm onAuthSuccess={handleAuthSuccess} />;
-  }
-
+  // Always allow access - no authentication required
   return <>{children}</>;
 };
 

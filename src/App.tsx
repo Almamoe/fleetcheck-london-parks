@@ -12,20 +12,9 @@ import SupervisorsPage from "./pages/SupervisorsPage";
 import InspectionHistory from "./pages/InspectionHistory";
 import { DashboardLayout } from "./components/DashboardLayout";
 import NotFound from "./pages/NotFound";
-import AuthForm from "./components/AuthForm";
-import { useNavigate } from "react-router-dom";
 
 const queryClient = new QueryClient();
 
-const AuthPage = () => {
-  const navigate = useNavigate();
-  
-  const handleAuthSuccess = () => {
-    navigate('/dashboard');
-  };
-
-  return <AuthForm onAuthSuccess={handleAuthSuccess} />;
-};
 
 
 const App = () => (
@@ -37,8 +26,6 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/signin" element={<AuthPage />} />
             <Route path="/inspection" element={<Index />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
