@@ -29,7 +29,10 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { inspectionData, supervisorEmail, supervisorName, driverName }: InspectionConfirmationRequest = await req.json();
 
-    console.log('Received inspection data:', JSON.stringify(inspectionData, null, 2));
+    console.log('=== INSPECTION DATA RECEIVED ===');
+    console.log('Full inspection data:', JSON.stringify(inspectionData, null, 2));
+    console.log('endEquipment exists:', !!inspectionData.endEquipment);
+    console.log('endEquipment value:', inspectionData.endEquipment);
 
     // Generate report ID
     const reportId = `FL-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
@@ -91,6 +94,10 @@ const handler = async (req: Request): Promise<Response> => {
       ? `${inspectionData.selectedVehicle.name} (${inspectionData.selectedVehicle.plate_number})`
       : inspectionData.vehicleName || 'Unknown Vehicle';
 
+    console.log('=== PREPARING EMAIL TEMPLATE ===');
+    console.log('startEquipmentIssues being passed to template:', startEquipmentIssuesStr);
+    console.log('endEquipmentIssues being passed to template:', endEquipmentIssuesStr);
+    
     // Render the React Email template
     const html = await renderAsync(
       React.createElement(InspectionConfirmationEmail, {
@@ -111,6 +118,9 @@ const handler = async (req: Request): Promise<Response> => {
         supervisorName,
       })
     );
+    
+    console.log('=== EMAIL HTML GENERATED ===');
+    console.log('Email HTML contains end equipment:', html.includes('End of Day Equipment'));
 
     // Send email to supervisor
     const supervisorEmailResponse = await resend.emails.send({
