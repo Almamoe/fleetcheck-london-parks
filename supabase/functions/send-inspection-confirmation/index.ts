@@ -48,10 +48,14 @@ const handler = async (req: Request): Promise<Response> => {
     
     // Process end of day equipment
     if (inspectionData.endEquipment) {
-      console.log('Processing endEquipment:', inspectionData.endEquipment);
+      console.log('Processing endEquipment:', JSON.stringify(inspectionData.endEquipment, null, 2));
       const endIssues = Object.entries(inspectionData.endEquipment)
         .filter(([_, value]) => value === true)
-        .map(([key, _]) => key.replace(/([A-Z])/g, ' $1').trim());
+        .map(([key, _]) => {
+          // Convert camelCase to readable format
+          const readable = key.replace(/([A-Z])/g, ' $1').trim();
+          return readable.charAt(0).toUpperCase() + readable.slice(1);
+        });
       console.log('End issues found:', endIssues);
       endEquipmentIssues.push(...endIssues);
     }
