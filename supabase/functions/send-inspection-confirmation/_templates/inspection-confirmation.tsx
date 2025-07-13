@@ -24,7 +24,8 @@ interface InspectionConfirmationProps {
   odometerStart: string
   odometerEnd: string
   totalMiles: number
-  equipmentIssues: string
+  startEquipmentIssues: string
+  endEquipmentIssues: string
   startNotes?: string
   endNotes?: string
   damageReport?: string
@@ -41,7 +42,8 @@ export const InspectionConfirmationEmail = ({
   odometerStart,
   odometerEnd,
   totalMiles,
-  equipmentIssues,
+  startEquipmentIssues,
+  endEquipmentIssues,
   startNotes,
   endNotes,
   damageReport,
@@ -106,10 +108,25 @@ export const InspectionConfirmationEmail = ({
         {/* Equipment Status Section */}
         <Section style={section}>
           <Heading style={h2}>🔧 Equipment Status</Heading>
-          <Section style={equipmentIssues === 'None reported' ? equipmentGood : equipmentAlert}>
-            <Text style={equipmentText}>
-              <strong>⚠️ Issues Reported:</strong> {equipmentIssues}
-            </Text>
+          
+          {/* Start of Day Equipment */}
+          <Section style={noteSection}>
+            <Text style={noteLabel}>Start of Day Equipment Issues:</Text>
+            <Section style={startEquipmentIssues === 'None reported' ? equipmentGood : equipmentAlert}>
+              <Text style={equipmentText}>
+                <strong>🌅 Issues Reported:</strong> {startEquipmentIssues}
+              </Text>
+            </Section>
+          </Section>
+          
+          {/* End of Day Equipment */}
+          <Section style={noteSection}>
+            <Text style={noteLabel}>End of Day Equipment Issues:</Text>
+            <Section style={endEquipmentIssues === 'None reported' ? equipmentGood : equipmentAlert}>
+              <Text style={equipmentText}>
+                <strong>🌆 Issues Reported:</strong> {endEquipmentIssues}
+              </Text>
+            </Section>
           </Section>
         </Section>
 

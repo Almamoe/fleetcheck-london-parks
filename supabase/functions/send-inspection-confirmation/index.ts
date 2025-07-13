@@ -60,13 +60,14 @@ const handler = async (req: Request): Promise<Response> => {
       endEquipmentIssues.push(...endIssues);
     }
     
-    // Combine all equipment issues
-    const allIssues = [...startEquipmentIssues, ...endEquipmentIssues];
+    // Prepare separate equipment issues strings
+    const startEquipmentIssuesStr = startEquipmentIssues.length > 0 ? startEquipmentIssues.join(', ') : 'None reported';
+    const endEquipmentIssuesStr = endEquipmentIssues.length > 0 ? endEquipmentIssues.join(', ') : 'None reported';
+    
     console.log('Start equipment issues:', startEquipmentIssues);
     console.log('End equipment issues:', endEquipmentIssues);
-    console.log('All issues combined:', allIssues);
-    const equipmentIssues = allIssues.length > 0 ? allIssues.join(', ') : 'None reported';
-    console.log('Final equipment issues string:', equipmentIssues);
+    console.log('Start equipment issues string:', startEquipmentIssuesStr);
+    console.log('End equipment issues string:', endEquipmentIssuesStr);
 
     // Calculate total miles
     const odometerStart = inspectionData.odometerStart;
@@ -101,7 +102,8 @@ const handler = async (req: Request): Promise<Response> => {
         odometerStart: odometerStart || 'N/A',
         odometerEnd: odometerEnd || 'N/A',
         totalMiles,
-        equipmentIssues,
+        startEquipmentIssues: startEquipmentIssuesStr,
+        endEquipmentIssues: endEquipmentIssuesStr,
         startNotes,
         endNotes,
         damageReport,
