@@ -21,6 +21,7 @@ export const sendInspectionConfirmation = async (inspectionData: any, supervisor
           odometerStart: inspectionData.odometerStart,
           odometerEnd: inspectionData.odometerEnd,
           equipment: inspectionData.equipment || {},
+          endEquipment: inspectionData.endEquipment || {},
           notes: inspectionData.notes || inspectionData.startNotes,
           endNotes: inspectionData.endNotes,
           damageReport: inspectionData.damageReport,
