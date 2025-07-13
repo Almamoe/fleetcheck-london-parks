@@ -62,6 +62,8 @@ const handler = async (req: Request): Promise<Response> => {
     
     // Combine all equipment issues
     const allIssues = [...startEquipmentIssues, ...endEquipmentIssues];
+    console.log('Start equipment issues:', startEquipmentIssues);
+    console.log('End equipment issues:', endEquipmentIssues);
     console.log('All issues combined:', allIssues);
     const equipmentIssues = allIssues.length > 0 ? allIssues.join(', ') : 'None reported';
     console.log('Final equipment issues string:', equipmentIssues);
