@@ -51,16 +51,26 @@ const handler = async (req: Request): Promise<Response> => {
     
     // Process end of day equipment
     if (inspectionData.endEquipment) {
-      console.log('Processing endEquipment:', JSON.stringify(inspectionData.endEquipment, null, 2));
-      const endIssues = Object.entries(inspectionData.endEquipment)
-        .filter(([_, value]) => value === true)
-        .map(([key, _]) => {
-          // Convert camelCase to readable format
-          const readable = key.replace(/([A-Z])/g, ' $1').trim();
-          return readable.charAt(0).toUpperCase() + readable.slice(1);
-        });
-      console.log('End issues found:', endIssues);
+      console.log('=== PROCESSING END EQUIPMENT ===');
+      console.log('Raw endEquipment:', JSON.stringify(inspectionData.endEquipment, null, 2));
+      
+      const endEquipmentEntries = Object.entries(inspectionData.endEquipment);
+      console.log('All endEquipment entries:', endEquipmentEntries);
+      
+      const filteredEntries = endEquipmentEntries.filter(([_, value]) => value === true);
+      console.log('Filtered true entries:', filteredEntries);
+      
+      const endIssues = filteredEntries.map(([key, _]) => {
+        // Convert camelCase to readable format
+        const readable = key.replace(/([A-Z])/g, ' $1').trim();
+        const formatted = readable.charAt(0).toUpperCase() + readable.slice(1);
+        console.log(`Converting "${key}" to "${formatted}"`);
+        return formatted;
+      });
+      console.log('Final end issues array:', endIssues);
       endEquipmentIssues.push(...endIssues);
+    } else {
+      console.log('No endEquipment data found');
     }
     
     // Prepare separate equipment issues strings
