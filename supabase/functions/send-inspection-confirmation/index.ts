@@ -107,6 +107,10 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('=== PREPARING EMAIL TEMPLATE ===');
     console.log('startEquipmentIssues being passed to template:', startEquipmentIssuesStr);
     console.log('endEquipmentIssues being passed to template:', endEquipmentIssuesStr);
+    console.log('Template parameters check:');
+    console.log('- startEquipmentIssues param:', startEquipmentIssuesStr);
+    console.log('- endEquipmentIssues param:', endEquipmentIssuesStr);
+    console.log('- Are they different?', startEquipmentIssuesStr !== endEquipmentIssuesStr);
     
     // Render the React Email template
     const html = await renderAsync(
