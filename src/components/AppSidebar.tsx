@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Truck, Users, LogOut } from 'lucide-react';
 import {
   Sidebar,
@@ -14,6 +14,7 @@ import {
   SidebarHeader,
   useSidebar,
 } from '@/components/ui/sidebar';
+import { useAuth } from '@/contexts/AuthContext';
 
 const navigationItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
@@ -25,8 +26,15 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
 
   const isActive = (path: string) => currentPath === path;
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/signin');
+  };
 
   return (
     <Sidebar className="bg-slate-800 text-white border-r-0">
@@ -69,14 +77,12 @@ export function AppSidebar() {
               ))}
               
               <SidebarMenuItem>
-                <SidebarMenuButton asChild className="mt-8">
-                  <NavLink
-                    to="/signin"
-                    className="flex items-center px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
-                  >
-                    <LogOut className="mr-3 h-5 w-5" />
-                    {state === 'expanded' && <span>Logout</span>}
-                  </NavLink>
+                <SidebarMenuButton 
+                  className="mt-8 flex items-center px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-700 hover:text-white transition-colors cursor-pointer"
+                  onClick={handleSignOut}
+                >
+                  <LogOut className="mr-3 h-5 w-5" />
+                  {state === 'expanded' && <span>Logout</span>}
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
