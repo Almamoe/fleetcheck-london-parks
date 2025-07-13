@@ -33,7 +33,7 @@ export function AppSidebar() {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/signin');
+    navigate('/');
   };
 
   return (
