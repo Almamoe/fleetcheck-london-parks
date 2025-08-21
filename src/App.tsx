@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Vehicles from "./pages/Vehicles";
 import SupervisorsPage from "./pages/SupervisorsPage";
 import InspectionHistory from "./pages/InspectionHistory";
+import Presentation from "./pages/Presentation";
 import { DashboardLayout } from "./components/DashboardLayout";
 import NotFound from "./pages/NotFound";
 
@@ -55,6 +56,7 @@ const App = () => (
                 </DashboardLayout>
               </ProtectedRoute>
             } />
+            <Route path="/presentation" element={<Presentation />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
