@@ -5,9 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Users, Check } from 'lucide-react';
+import { Plus, Trash2, Users, Check, Lock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import { isAdminOrSupervisor, hasRole } from '@/utils/roleUtils';
 
 interface Supervisor {
   id: string;
@@ -31,6 +32,8 @@ const SupervisorManager = ({
   const [supervisors, setSupervisors] = useState<Supervisor[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [canManageSupervisors, setCanManageSupervisors] = useState(false);
+  const [canViewSupervisors, setCanViewSupervisors] = useState(false);
   const [newSupervisor, setNewSupervisor] = useState({
     name: '',
     email: '',
@@ -38,8 +41,32 @@ const SupervisorManager = ({
   });
 
   useEffect(() => {
-    loadSupervisors();
+    checkPermissions();
   }, []);
+
+  useEffect(() => {
+    if (canViewSupervisors) {
+      loadSupervisors();
+    } else {
+      setLoading(false);
+    }
+  }, [canViewSupervisors]);
+
+  const checkPermissions = async () => {
+    try {
+      const [isAdminResult, canView] = await Promise.all([
+        hasRole('admin'),
+        isAdminOrSupervisor()
+      ]);
+      
+      setCanManageSupervisors(isAdminResult);
+      setCanViewSupervisors(canView);
+    } catch (error) {
+      console.error('Error checking permissions:', error);
+      setCanManageSupervisors(false);
+      setCanViewSupervisors(false);
+    }
+  };
 
   const loadSupervisors = async () => {
     try {
@@ -204,9 +231,29 @@ const SupervisorManager = ({
     );
   }
 
+  // Show access denied if user doesn't have permission to view supervisors
+  if (!canViewSupervisors) {
+    return (
+      <div className="space-y-6">
+        {showTitle && (
+          <h2 className="text-2xl font-bold text-slate-800">Available Supervisors</h2>
+        )}
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="text-center py-12">
+            <Lock className="h-12 w-12 text-orange-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-orange-800 mb-2">Access Restricted</h3>
+            <p className="text-orange-600">
+              You need admin or supervisor privileges to view supervisor information.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      {showTitle && (
+      {showTitle && canManageSupervisors && (
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-bold text-slate-800">Available Supervisors</h2>
           <Button 
@@ -219,7 +266,11 @@ const SupervisorManager = ({
         </div>
       )}
 
-      {!showTitle && (
+      {showTitle && !canManageSupervisors && (
+        <h2 className="text-2xl font-bold text-slate-800">Available Supervisors</h2>
+      )}
+
+      {!showTitle && canManageSupervisors && (
         <div className="flex justify-end">
           <Button 
             onClick={() => setShowAddForm(!showAddForm)}
@@ -231,7 +282,7 @@ const SupervisorManager = ({
         </div>
       )}
 
-      {showAddForm && (
+      {showAddForm && canManageSupervisors && (
         <Card className="border-emerald-200">
           <CardHeader>
             <CardTitle className="text-slate-800">Add New Supervisor</CardTitle>
@@ -318,7 +369,7 @@ const SupervisorManager = ({
                   {selectedSupervisor?.id === supervisor.id && (
                     <Check className="h-5 w-5 text-emerald-600" />
                   )}
-                  {!onSupervisorSelect && (
+                  {!onSupervisorSelect && canManageSupervisors && (
                     <Button
                       variant="ghost"
                       size="sm"
@@ -338,7 +389,7 @@ const SupervisorManager = ({
         ))}
       </div>
 
-      {supervisors.length === 0 && !showAddForm && (
+      {supervisors.length === 0 && !showAddForm && canManageSupervisors && (
         <Card className="border-emerald-200">
           <CardContent className="text-center py-12">
             <Users className="h-12 w-12 text-emerald-300 mx-auto mb-4" />
@@ -350,6 +401,15 @@ const SupervisorManager = ({
               <Plus className="mr-2 h-4 w-4" />
               Add Your First Supervisor
             </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {supervisors.length === 0 && !canManageSupervisors && (
+        <Card className="border-emerald-200">
+          <CardContent className="text-center py-12">
+            <Users className="h-12 w-12 text-emerald-300 mx-auto mb-4" />
+            <p className="text-slate-600">No supervisors available.</p>
           </CardContent>
         </Card>
       )}

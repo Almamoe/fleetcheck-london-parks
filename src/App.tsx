@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Vehicles from "./pages/Vehicles";
 import SupervisorsPage from "./pages/SupervisorsPage";
+import AdminPage from "./pages/AdminPage";
 import InspectionHistory from "./pages/InspectionHistory";
 import Presentation from "./pages/Presentation";
 import { DashboardLayout } from "./components/DashboardLayout";
@@ -46,6 +47,13 @@ const App = () => (
               <ProtectedRoute>
                 <DashboardLayout>
                   <SupervisorsPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/admin" element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <AdminPage />
                 </DashboardLayout>
               </ProtectedRoute>
             } />

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Truck, Users, LogOut } from 'lucide-react';
+import { LayoutDashboard, Truck, Users, LogOut, Shield } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -15,6 +15,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { useAuth } from '@/contexts/AuthContext';
+import { hasRole } from '@/utils/roleUtils';
 
 const navigationItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
@@ -28,6 +29,21 @@ export function AppSidebar() {
   const currentPath = location.pathname;
   const { signOut } = useAuth();
   const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkAdminStatus = async () => {
+      try {
+        const adminStatus = await hasRole('admin');
+        setIsAdmin(adminStatus);
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+        setIsAdmin(false);
+      }
+    };
+    
+    checkAdminStatus();
+  }, []);
 
   const isActive = (path: string) => currentPath === path;
 
@@ -75,6 +91,27 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              
+              {/* Admin-only navigation item */}
+              {isAdmin && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild className="mb-2">
+                    <NavLink
+                      to="/admin"
+                      className={({ isActive }) =>
+                        `flex items-center px-4 py-3 rounded-lg transition-colors ${
+                          isActive
+                            ? 'bg-emerald-600 text-white'
+                            : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+                        }`
+                      }
+                    >
+                      <Shield className="mr-3 h-5 w-5" />
+                      {state === 'expanded' && <span>Admin</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
               
               <SidebarMenuItem>
                 <SidebarMenuButton 
