@@ -22,8 +22,8 @@ const DriverSignIn = ({ onSignIn, onGoToDashboard }: DriverSignInProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-50 flex items-center justify-center p-4 relative z-10">
-      <div className="w-full max-w-md space-y-8 relative z-20">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <img
             src="/lovable-uploads/d06e4237-0209-4e8b-ab56-fa47f79f7ca5.png"
@@ -34,7 +34,7 @@ const DriverSignIn = ({ onSignIn, onGoToDashboard }: DriverSignInProps) => {
           <p className="text-emerald-700">City of London Parks & Recreation</p>
         </div>
 
-        <Card className="shadow-2xl border-0 relative z-30" style={{ pointerEvents: 'auto' }}>
+        <Card className="shadow-2xl border-0">
           <CardHeader className="text-center pb-8 bg-emerald-700 text-white rounded-t-lg">
             <CardTitle className="text-2xl">Driver Sign In</CardTitle>
             <p className="text-emerald-100 mt-2">Enter your details to begin inspection</p>
@@ -73,9 +73,8 @@ const DriverSignIn = ({ onSignIn, onGoToDashboard }: DriverSignInProps) => {
 
               <Button 
                 type="submit" 
-                className="w-full h-12 text-base bg-emerald-700 hover:bg-emerald-800 text-white font-medium relative z-40"
+                className="w-full h-12 text-base bg-emerald-700 hover:bg-emerald-800 text-white font-medium"
                 disabled={!name.trim() || !driverId.trim()}
-                style={{ pointerEvents: 'auto' }}
               >
                 Sign In & Start Inspection
               </Button>
@@ -85,8 +84,7 @@ const DriverSignIn = ({ onSignIn, onGoToDashboard }: DriverSignInProps) => {
               <Button 
                 variant="outline"
                 onClick={onGoToDashboard}
-                className="w-full h-12 text-base border-emerald-300 text-emerald-700 hover:bg-emerald-50 relative z-40"
-                style={{ pointerEvents: 'auto' }}
+                className="w-full h-12 text-base border-emerald-300 text-emerald-700 hover:bg-emerald-50"
               >
                 Go to Dashboard
               </Button>
