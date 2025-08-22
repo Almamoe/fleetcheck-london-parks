@@ -29,10 +29,26 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { inspectionData, supervisorEmail, supervisorName, driverName }: InspectionConfirmationRequest = await req.json();
 
-    console.log('=== INSPECTION DATA RECEIVED ===');
-    console.log('Full inspection data:', JSON.stringify(inspectionData, null, 2));
-    console.log('endEquipment exists:', !!inspectionData.endEquipment);
-    console.log('endEquipment value:', inspectionData.endEquipment);
+    // Validate and sanitize inputs to prevent injection attacks
+    if (!supervisorEmail || !supervisorName || !driverName) {
+      throw new Error('Missing required fields');
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(supervisorEmail)) {
+      throw new Error('Invalid email format');
+    }
+
+    // Sanitize text inputs (remove HTML and control characters)
+    const sanitize = (text: string): string => {
+      return text.replace(/<[^>]*>/g, '').replace(/[\x00-\x1f\x7f]/g, '').trim();
+    };
+
+    const sanitizedSupervisorName = sanitize(supervisorName);
+    const sanitizedDriverName = sanitize(driverName);
+
+    console.log('Processing inspection confirmation for driver:', sanitizedDriverName);
 
     // Generate report ID
     const reportId = `FL-${new Date().toISOString().split('T')[0].replace(/-/g, '')}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
@@ -51,36 +67,24 @@ const handler = async (req: Request): Promise<Response> => {
     
     // Process end of day equipment
     if (inspectionData.endEquipment) {
-      console.log('=== PROCESSING END EQUIPMENT ===');
-      console.log('Raw endEquipment:', JSON.stringify(inspectionData.endEquipment, null, 2));
-      
       const endEquipmentEntries = Object.entries(inspectionData.endEquipment);
-      console.log('All endEquipment entries:', endEquipmentEntries);
-      
       const filteredEntries = endEquipmentEntries.filter(([_, value]) => value === true);
-      console.log('Filtered true entries:', filteredEntries);
       
       const endIssues = filteredEntries.map(([key, _]) => {
-        // Convert camelCase to readable format
+        // Convert camelCase to readable format and sanitize
         const readable = key.replace(/([A-Z])/g, ' $1').trim();
         const formatted = readable.charAt(0).toUpperCase() + readable.slice(1);
-        console.log(`Converting "${key}" to "${formatted}"`);
-        return formatted;
+        return sanitize(formatted);
       });
-      console.log('Final end issues array:', endIssues);
       endEquipmentIssues.push(...endIssues);
-    } else {
-      console.log('No endEquipment data found');
     }
     
     // Prepare separate equipment issues strings
     const startEquipmentIssuesStr = startEquipmentIssues.length > 0 ? startEquipmentIssues.join(', ') : 'None reported';
     const endEquipmentIssuesStr = endEquipmentIssues.length > 0 ? endEquipmentIssues.join(', ') : 'None reported';
     
-    console.log('Start equipment issues:', startEquipmentIssues);
-    console.log('End equipment issues:', endEquipmentIssues);
-    console.log('Start equipment issues string:', startEquipmentIssuesStr);
-    console.log('End equipment issues string:', endEquipmentIssuesStr);
+    // Log summary without sensitive details
+    console.log('Equipment issues processed - Start:', startEquipmentIssues.length, 'End:', endEquipmentIssues.length);
 
     // Calculate total miles
     const odometerStart = inspectionData.odometerStart;
@@ -93,31 +97,25 @@ const handler = async (req: Request): Promise<Response> => {
     const inspectionDate = inspectionData.date || new Date().toLocaleDateString();
     const inspectionTime = inspectionData.time || new Date().toLocaleTimeString();
 
-    // Collect all notes/comments - check multiple possible field names
-    const startNotes = inspectionData.notes || inspectionData.startNotes || '';
-    const endNotes = inspectionData.endNotes || '';
-    const damageReport = inspectionData.damageReport || '';
-    const comments = inspectionData.comments || '';
+    // Collect all notes/comments - check multiple possible field names and sanitize
+    const startNotes = sanitize(inspectionData.notes || inspectionData.startNotes || '');
+    const endNotes = sanitize(inspectionData.endNotes || '');
+    const damageReport = sanitize(inspectionData.damageReport || '');
+    const comments = sanitize(inspectionData.comments || '');
 
     // Extract vehicle name properly
     const vehicleName = inspectionData.selectedVehicle?.name 
       ? `${inspectionData.selectedVehicle.name} (${inspectionData.selectedVehicle.plate_number})`
       : inspectionData.vehicleName || 'Unknown Vehicle';
 
-    console.log('=== PREPARING EMAIL TEMPLATE ===');
-    console.log('startEquipmentIssues being passed to template:', startEquipmentIssuesStr);
-    console.log('endEquipmentIssues being passed to template:', endEquipmentIssuesStr);
-    console.log('Template parameters check:');
-    console.log('- startEquipmentIssues param:', startEquipmentIssuesStr);
-    console.log('- endEquipmentIssues param:', endEquipmentIssuesStr);
-    console.log('- Are they different?', startEquipmentIssuesStr !== endEquipmentIssuesStr);
+    console.log('Preparing email template for report:', reportId);
     
     // Render the React Email template
     const html = await renderAsync(
       React.createElement(InspectionConfirmationEmail, {
         reportId,
-        driverName,
-        vehicleName,
+        driverName: sanitizedDriverName,
+        vehicleName: sanitize(vehicleName),
         inspectionDate,
         inspectionTime,
         odometerStart: odometerStart || 'N/A',
@@ -129,22 +127,21 @@ const handler = async (req: Request): Promise<Response> => {
         endNotes,
         damageReport,
         comments,
-        supervisorName,
+        supervisorName: sanitizedSupervisorName,
       })
     );
     
-    console.log('=== EMAIL HTML GENERATED ===');
-    console.log('Email HTML contains end equipment:', html.includes('End of Day Equipment'));
+    console.log('Email template rendered successfully');
 
     // Send email to supervisor
     const supervisorEmailResponse = await resend.emails.send({
       from: "FleetCheck <onboarding@resend.dev>",
       to: [supervisorEmail],
-      subject: `Fleet Inspection Report - ${reportId} - ${driverName}`,
+      subject: `Fleet Inspection Report - ${reportId} - ${sanitizedDriverName}`,
       html,
     });
 
-    console.log("Supervisor email sent successfully:", supervisorEmailResponse);
+    console.log("Email sent successfully to supervisor, ID:", supervisorEmailResponse.data?.id);
 
     return new Response(JSON.stringify({ 
       success: true, 
