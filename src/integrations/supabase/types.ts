@@ -111,6 +111,13 @@ export type Database = {
             foreignKeyName: "inspections_supervisor_id_fkey"
             columns: ["supervisor_id"]
             isOneToOne: false
+            referencedRelation: "supervisor_directory"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspections_supervisor_id_fkey"
+            columns: ["supervisor_id"]
+            isOneToOne: false
             referencedRelation: "supervisors"
             referencedColumns: ["id"]
           },
@@ -147,6 +154,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          department: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       vehicles: {
         Row: {
           created_at: string
@@ -176,13 +210,47 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      supervisor_directory: {
+        Row: {
+          created_at: string | null
+          department: string | null
+          id: string | null
+          name: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          department?: string | null
+          id?: string | null
+          name?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          department?: string | null
+          id?: string | null
+          name?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      get_user_department: {
+        Args: { _user_id: string }
+        Returns: string
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin_or_supervisor: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "supervisor" | "driver" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -309,6 +377,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "supervisor", "driver", "user"],
+    },
   },
 } as const
