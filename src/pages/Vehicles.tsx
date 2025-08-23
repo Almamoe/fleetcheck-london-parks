@@ -77,15 +77,6 @@ const Vehicles = () => {
 
   const handleAddVehicle = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!user || !session) {
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to add vehicles",
-        variant: "destructive",
-      });
-      return;
-    }
 
     if (newVehicle.name && newVehicle.type && newVehicle.plate_number) {
       try {
