@@ -95,9 +95,10 @@ const Vehicles = () => {
 
         if (error) {
           console.error('Error adding vehicle:', error);
+          console.error('Error details:', JSON.stringify(error, null, 2));
           toast({
             title: "Error",
-            description: "Failed to add vehicle to database",
+            description: `Failed to add vehicle: ${error.message}`,
             variant: "destructive",
           });
           return;
