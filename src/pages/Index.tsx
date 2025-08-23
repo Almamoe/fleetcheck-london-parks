@@ -35,12 +35,14 @@ const Index = () => {
       await createOrGetDriver(name, id);
       
       setDriverInfo({ name, id });
-      setCurrentStep('startday');
+      // Navigate to dashboard instead of starting inspection directly
+      navigate('/dashboard');
     } catch (error) {
       console.error('Error storing driver info:', error);
       // Continue with the flow even if Supabase fails
       setDriverInfo({ name, id });
-      setCurrentStep('startday');
+      // Navigate to dashboard instead of starting inspection directly
+      navigate('/dashboard');
     }
   };
 
