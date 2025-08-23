@@ -60,11 +60,11 @@ const SupervisorManager = ({
       ]);
       
       setCanManageSupervisors(isAdminResult);
-      setCanViewSupervisors(canView);
+      setCanViewSupervisors(true); // Allow public access to view supervisors for inspection submissions
     } catch (error) {
       console.error('Error checking permissions:', error);
       setCanManageSupervisors(false);
-      setCanViewSupervisors(false);
+      setCanViewSupervisors(true); // Allow public access even if permission check fails
     }
   };
 
