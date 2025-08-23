@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '@/components/Header';
 import DriverSignIn from '@/components/DriverSignIn';
 import StartOfDayForm from '@/components/StartOfDayForm';
@@ -21,6 +21,7 @@ interface Supervisor {
 
 const Index = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [currentStep, setCurrentStep] = useState<InspectionStep>('signin');
   const [driverInfo, setDriverInfo] = useState({ name: '', id: '' });
   const [startOfDayData, setStartOfDayData] = useState(null);
@@ -28,19 +29,50 @@ const Index = () => {
   const [signatureData, setSignatureData] = useState('');
   const [selectedSupervisor, setSelectedSupervisor] = useState<Supervisor>();
 
+  // Check for existing driver session when component mounts
+  useEffect(() => {
+    const checkExistingSession = () => {
+      // Check if there's driver info in localStorage from a recent session
+      const savedDriverInfo = localStorage.getItem('fleetcheck-current-driver');
+      if (savedDriverInfo) {
+        try {
+          const driverData = JSON.parse(savedDriverInfo);
+          if (driverData.name && driverData.id) {
+            setDriverInfo(driverData);
+            // If coming from dashboard (not a fresh start), go to startday
+            if (location.pathname === '/inspection') {
+              setCurrentStep('startday');
+            }
+          }
+        } catch (error) {
+          console.error('Error parsing saved driver info:', error);
+          localStorage.removeItem('fleetcheck-current-driver');
+        }
+      }
+    };
+
+    checkExistingSession();
+  }, [location.pathname]);
+
   const handleSignIn = async (name: string, id: string) => {
     try {
       // Store driver info in Supabase
       console.log('Storing driver info in Supabase:', { name, id });
       await createOrGetDriver(name, id);
       
-      setDriverInfo({ name, id });
+      const driverData = { name, id };
+      setDriverInfo(driverData);
+      // Save driver info to localStorage for future inspections
+      localStorage.setItem('fleetcheck-current-driver', JSON.stringify(driverData));
       // Navigate to dashboard instead of starting inspection directly
       navigate('/dashboard');
     } catch (error) {
       console.error('Error storing driver info:', error);
       // Continue with the flow even if Supabase fails
-      setDriverInfo({ name, id });
+      const driverData = { name, id };
+      setDriverInfo(driverData);
+      // Save driver info to localStorage for future inspections
+      localStorage.setItem('fleetcheck-current-driver', JSON.stringify(driverData));
       // Navigate to dashboard instead of starting inspection directly
       navigate('/dashboard');
     }
