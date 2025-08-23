@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Truck, Plus, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Vehicle {
   id: string;
@@ -28,6 +29,7 @@ const Vehicles = () => {
     department: 'Parks & Recreation'
   });
   const { toast } = useToast();
+  const { user, session } = useAuth();
 
   useEffect(() => {
     loadVehicles();
@@ -75,9 +77,20 @@ const Vehicles = () => {
 
   const handleAddVehicle = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user || !session) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to add vehicles",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (newVehicle.name && newVehicle.type && newVehicle.plate_number) {
       try {
         console.log('Adding vehicle to Supabase:', newVehicle);
+        console.log('Current user:', user?.id);
         const { data, error } = await supabase
           .from('vehicles')
           .insert([{
