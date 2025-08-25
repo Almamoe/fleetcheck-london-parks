@@ -29,30 +29,12 @@ const Index = () => {
   const [signatureData, setSignatureData] = useState('');
   const [selectedSupervisor, setSelectedSupervisor] = useState<Supervisor>();
 
-  // Check for existing driver session when component mounts
+  // Always start fresh - clear any saved driver info on component mount
   useEffect(() => {
-    const checkExistingSession = () => {
-      // Only auto-populate driver info if coming from dashboard to start new inspection
-      if (location.pathname === '/inspection') {
-        const savedDriverInfo = localStorage.getItem('fleetcheck-current-driver');
-        if (savedDriverInfo) {
-          try {
-            const driverData = JSON.parse(savedDriverInfo);
-            if (driverData.name && driverData.id) {
-              setDriverInfo(driverData);
-              setCurrentStep('startday');
-            }
-          } catch (error) {
-            console.error('Error parsing saved driver info:', error);
-            localStorage.removeItem('fleetcheck-current-driver');
-          }
-        }
-      }
-      // For home route ('/'), always start at signin regardless of saved info
-    };
-
-    checkExistingSession();
-  }, [location.pathname]);
+    // Clear saved driver info to ensure fresh start every time
+    localStorage.removeItem('fleetcheck-current-driver');
+    setCurrentStep('signin');
+  }, []);
 
   const handleSignIn = async (name: string, id: string) => {
     try {
