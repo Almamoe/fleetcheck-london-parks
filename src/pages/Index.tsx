@@ -39,6 +39,11 @@ const Index = () => {
           const driverData = JSON.parse(savedDriverInfo);
           if (driverData.name && driverData.id) {
             setDriverInfo(driverData);
+            // If on inspection route and have driver info, redirect to dashboard to see completed inspections
+            if (location.pathname === '/' || location.pathname === '/inspection') {
+              navigate('/dashboard');
+              return;
+            }
             // If coming from dashboard (not a fresh start), go to startday
             if (location.pathname === '/inspection') {
               setCurrentStep('startday');
@@ -52,7 +57,7 @@ const Index = () => {
     };
 
     checkExistingSession();
-  }, [location.pathname]);
+  }, [location.pathname, navigate]);
 
   const handleSignIn = async (name: string, id: string) => {
     try {
