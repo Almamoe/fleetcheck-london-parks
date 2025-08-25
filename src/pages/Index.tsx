@@ -125,6 +125,9 @@ const Index = () => {
       
       console.log('Inspection saved with ID:', inspectionId);
       
+      // Wait a moment for database commit before proceeding
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       // Also keep localStorage backup for compatibility with enhanced data structure
       const completeInspection = {
         driverName: driverInfo.name,
