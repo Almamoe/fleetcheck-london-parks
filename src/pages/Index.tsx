@@ -46,8 +46,8 @@ const Index = () => {
       setDriverInfo(driverData);
       // Save driver info to localStorage for future inspections
       localStorage.setItem('fleetcheck-current-driver', JSON.stringify(driverData));
-      // Navigate to dashboard instead of starting inspection directly
-      navigate('/dashboard');
+      // Continue with inspection flow
+      setCurrentStep('startday');
     } catch (error) {
       console.error('Error storing driver info:', error);
       // Continue with the flow even if Supabase fails
@@ -55,8 +55,8 @@ const Index = () => {
       setDriverInfo(driverData);
       // Save driver info to localStorage for future inspections
       localStorage.setItem('fleetcheck-current-driver', JSON.stringify(driverData));
-      // Navigate to dashboard instead of starting inspection directly
-      navigate('/dashboard');
+      // Continue with inspection flow
+      setCurrentStep('startday');
     }
   };
 
