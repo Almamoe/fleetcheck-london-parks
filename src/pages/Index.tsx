@@ -204,7 +204,7 @@ const Index = () => {
   };
 
   const handleGoToDashboard = () => {
-    navigate('/dashboard');
+    navigate('/dashboard', { state: { refreshDashboard: true } });
   };
 
   const renderCurrentStep = () => {

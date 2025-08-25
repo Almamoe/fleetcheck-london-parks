@@ -69,7 +69,7 @@ const EndOfDayForm = ({ driverName, startData, onSubmit }: EndOfDayFormProps) =>
     onSubmit({ ...formData, startData });
   };
 
-  const milesDriven = formData.odometerEnd && startData.odometerStart 
+  const kmDriven = formData.odometerEnd && startData.odometerStart 
     ? parseInt(formData.odometerEnd) - parseInt(startData.odometerStart)
     : 0;
 
@@ -103,7 +103,7 @@ const EndOfDayForm = ({ driverName, startData, onSubmit }: EndOfDayFormProps) =>
               
               <div className="space-y-2">
                 <Label htmlFor="odometerEnd" className="text-sm font-medium text-emerald-800">
-                  Ending Odometer Reading
+                  Ending Odometer Reading (km)
                 </Label>
                 <Input
                   id="odometerEnd"
@@ -117,10 +117,10 @@ const EndOfDayForm = ({ driverName, startData, onSubmit }: EndOfDayFormProps) =>
               </div>
             </div>
 
-            {milesDriven > 0 && (
+            {kmDriven > 0 && (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                 <p className="text-amber-800 font-semibold">
-                  Miles Driven Today: <span className="text-xl">{milesDriven}</span>
+                  Km Driven Today: <span className="text-xl">{kmDriven}</span>
                 </p>
               </div>
             )}

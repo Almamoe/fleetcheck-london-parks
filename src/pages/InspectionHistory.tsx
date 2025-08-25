@@ -139,8 +139,8 @@ const InspectionHistory = () => {
               <h3 className="font-medium text-slate-800 mb-2">Inspection Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <p><span className="font-medium">Start Odometer:</span> {selectedInspection.odometer_start || selectedInspection.startOfDay?.odometer || 'N/A'}</p>
-                  <p><span className="font-medium">End Odometer:</span> {selectedInspection.odometer_end || selectedInspection.endOfDay?.finalOdometer || 'N/A'}</p>
+                  <p><span className="font-medium">Start Odometer (km):</span> {selectedInspection.odometer_start || selectedInspection.startOfDay?.odometer || 'N/A'}</p>
+                  <p><span className="font-medium">End Odometer (km):</span> {selectedInspection.odometer_end || selectedInspection.endOfDay?.finalOdometer || 'N/A'}</p>
                   <p><span className="font-medium">Start Time:</span> {selectedInspection.start_time || 'N/A'}</p>
                   <p><span className="font-medium">End Time:</span> {selectedInspection.end_time || 'N/A'}</p>
                 </div>

@@ -251,7 +251,7 @@ const StartOfDayForm = ({ driverName, onSubmit }: StartOfDayFormProps) => {
 
             <div className="space-y-2">
               <Label htmlFor="odometerStart" className="text-sm font-medium text-emerald-800">
-                Starting Odometer Reading
+                Starting Odometer Reading (km)
               </Label>
               <Input
                 id="odometerStart"

@@ -1,21 +1,31 @@
 
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Truck, Users, FileText, Plus } from 'lucide-react';
+import { Truck, Users, FileText, Plus, RefreshCw } from 'lucide-react';
 import { getInspections } from '@/utils/supabaseOperations';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const Dashboard = () => {
+  const location = useLocation();
   const [inspections, setInspections] = useState([]);
   const [vehicles, setVehicles] = useState([]);
   const [supervisors, setSupervisors] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     loadDashboardData();
   }, []);
+
+  // Refresh data when coming from inspection submission
+  useEffect(() => {
+    if (location.state?.refreshDashboard) {
+      loadDashboardData();
+    }
+  }, [location.state]);
 
   const loadDashboardData = async () => {
     try {
@@ -23,6 +33,7 @@ const Dashboard = () => {
       
       // Load inspections
       const inspectionsData = await getInspections();
+      console.log('Loaded inspections:', inspectionsData?.length || 0, 'records');
       setInspections(inspectionsData || []);
       
       // Load vehicles
@@ -51,7 +62,15 @@ const Dashboard = () => {
       setSupervisors(localSupervisors);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    toast.info('Refreshing dashboard data...');
+    await loadDashboardData();
+    toast.success('Dashboard data refreshed!');
   };
 
   if (loading) {
@@ -71,12 +90,23 @@ const Dashboard = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-slate-800">Dashboard</h1>
-        <Link to="/inspection">
-          <Button className="bg-emerald-700 hover:bg-emerald-800">
-            <Plus className="mr-2 h-4 w-4" />
-            New Inspection
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="border-emerald-300 text-emerald-700"
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            Refresh
           </Button>
-        </Link>
+          <Link to="/inspection">
+            <Button className="bg-emerald-700 hover:bg-emerald-800">
+              <Plus className="mr-2 h-4 w-4" />
+              New Inspection
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

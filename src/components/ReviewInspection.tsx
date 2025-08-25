@@ -108,9 +108,9 @@ const ReviewInspection: React.FC<ReviewInspectionProps> = ({
                 <p className="text-lg">{endOfDayData?.endTime ? formatTime(endOfDayData.endTime) : 'Not recorded'}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-muted-foreground">Mileage</label>
+                <label className="text-sm font-medium text-muted-foreground">Distance</label>
                 <p className="text-lg">
-                  {startOfDayData?.odometerStart} → {endOfDayData?.odometerEnd || 'Pending'} miles
+                  {startOfDayData?.odometerStart} → {endOfDayData?.odometerEnd || 'Pending'} km
                 </p>
               </div>
             </div>
