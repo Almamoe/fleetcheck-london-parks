@@ -4,27 +4,78 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FileText, Edit, Eye, Clock } from 'lucide-react';
+import { getInspections } from '@/utils/supabaseOperations';
 
 interface Inspection {
-  driverName: string;
-  driverId: string;
-  startOfDay: any;
-  endOfDay: any;
-  signature: string;
-  supervisor: any;
-  submittedAt: string;
+  driverName?: string;
+  driverId?: string;
+  startOfDay?: any;
+  endOfDay?: any;
+  signature?: string;
+  supervisor?: any;
+  submittedAt?: string;
   editRequested?: boolean;
   editApproved?: boolean;
+  // Supabase fields
+  id?: string;
+  supabaseId?: string;
+  drivers?: { name: string };
+  vehicles?: { name: string; plate_number: string };
+  supervisors?: { name: string; email: string };
+  inspection_date?: string;
+  start_time?: string;
+  end_time?: string;
+  odometer_start?: number;
+  odometer_end?: number;
+  start_notes?: string;
+  end_notes?: string;
+  equipment_issues?: any;
+  signature_data?: string;
+  status?: string;
 }
 
 const InspectionHistory = () => {
   const [inspections, setInspections] = useState<Inspection[]>([]);
   const [selectedInspection, setSelectedInspection] = useState<Inspection | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const savedInspections = JSON.parse(localStorage.getItem('fleetcheck-inspections') || '[]');
-    setInspections(savedInspections);
+    loadInspections();
   }, []);
+
+  const loadInspections = async () => {
+    try {
+      console.log('Loading inspections from Supabase...');
+      const supabaseInspections = await getInspections();
+      
+      // Also get localStorage inspections as fallback
+      const localInspections = JSON.parse(localStorage.getItem('fleetcheck-inspections') || '[]');
+      
+      // Combine both sources, preferring Supabase data
+      const allInspections = [...(supabaseInspections || []), ...localInspections];
+      
+      // Remove duplicates by checking supabaseId or comparing unique fields
+      const uniqueInspections = allInspections.filter((inspection, index, self) => {
+        return index === self.findIndex(i => 
+          (i.supabaseId && inspection.supabaseId && i.supabaseId === inspection.supabaseId) ||
+          (!i.supabaseId && !inspection.supabaseId && 
+           i.submittedAt === inspection.submittedAt && 
+           i.driverName === inspection.driverName)
+        );
+      });
+      
+      setInspections(uniqueInspections);
+      console.log('Loaded inspections:', uniqueInspections.length);
+    } catch (error) {
+      console.error('Error loading inspections:', error);
+      
+      // Fallback to localStorage only
+      const localInspections = JSON.parse(localStorage.getItem('fleetcheck-inspections') || '[]');
+      setInspections(localInspections);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleRequestEdit = (index: number) => {
     const updatedInspections = [...inspections];
@@ -62,37 +113,55 @@ const InspectionHistory = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <h3 className="font-medium text-slate-800 mb-2">Driver Information</h3>
-                <p><span className="font-medium">Name:</span> {selectedInspection.driverName}</p>
+                <p><span className="font-medium">Name:</span> {selectedInspection.drivers?.name || selectedInspection.driverName}</p>
                 <p><span className="font-medium">ID:</span> {selectedInspection.driverId}</p>
-                <p><span className="font-medium">Date:</span> {new Date(selectedInspection.submittedAt).toLocaleDateString()}</p>
+                <p><span className="font-medium">Date:</span> {
+                  selectedInspection.inspection_date ? 
+                    new Date(selectedInspection.inspection_date).toLocaleDateString() :
+                    selectedInspection.submittedAt ? new Date(selectedInspection.submittedAt).toLocaleDateString() : 'Unknown'
+                }</p>
               </div>
               <div>
                 <h3 className="font-medium text-slate-800 mb-2">Supervisor</h3>
-                <p><span className="font-medium">Name:</span> {selectedInspection.supervisor?.name}</p>
-                <p><span className="font-medium">Email:</span> {selectedInspection.supervisor?.email}</p>
+                <p><span className="font-medium">Name:</span> {selectedInspection.supervisors?.name || selectedInspection.supervisor?.name}</p>
+                <p><span className="font-medium">Email:</span> {selectedInspection.supervisors?.email || selectedInspection.supervisor?.email}</p>
               </div>
+              {selectedInspection.vehicles && (
+                <div>
+                  <h3 className="font-medium text-slate-800 mb-2">Vehicle Information</h3>
+                  <p><span className="font-medium">Vehicle:</span> {selectedInspection.vehicles.name}</p>
+                  <p><span className="font-medium">Plate:</span> {selectedInspection.vehicles.plate_number}</p>
+                </div>
+              )}
             </div>
             
-            {selectedInspection.startOfDay && (
-              <div>
-                <h3 className="font-medium text-slate-800 mb-2">Start of Day</h3>
-                <p><span className="font-medium">Odometer:</span> {selectedInspection.startOfDay.odometer}</p>
-                <p><span className="font-medium">Notes:</span> {selectedInspection.startOfDay.notes || 'None'}</p>
+            <div>
+              <h3 className="font-medium text-slate-800 mb-2">Inspection Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p><span className="font-medium">Start Odometer:</span> {selectedInspection.odometer_start || selectedInspection.startOfDay?.odometer || 'N/A'}</p>
+                  <p><span className="font-medium">End Odometer:</span> {selectedInspection.odometer_end || selectedInspection.endOfDay?.finalOdometer || 'N/A'}</p>
+                  <p><span className="font-medium">Start Time:</span> {selectedInspection.start_time || 'N/A'}</p>
+                  <p><span className="font-medium">End Time:</span> {selectedInspection.end_time || 'N/A'}</p>
+                </div>
+                <div>
+                  <p><span className="font-medium">Start Notes:</span> {selectedInspection.start_notes || selectedInspection.startOfDay?.notes || 'None'}</p>
+                  <p><span className="font-medium">End Notes:</span> {selectedInspection.end_notes || selectedInspection.endOfDay?.notes || 'None'}</p>
+                  <p><span className="font-medium">Status:</span> {selectedInspection.status || 'Completed'}</p>
+                </div>
               </div>
-            )}
-            
-            {selectedInspection.endOfDay && (
-              <div>
-                <h3 className="font-medium text-slate-800 mb-2">End of Day</h3>
-                <p><span className="font-medium">Final Odometer:</span> {selectedInspection.endOfDay.finalOdometer}</p>
-                <p><span className="font-medium">Notes:</span> {selectedInspection.endOfDay.notes || 'None'}</p>
-              </div>
-            )}
+            </div>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-4">
-          {inspections.length > 0 ? (
+          {loading ? (
+            <Card className="border-emerald-200">
+              <CardContent className="text-center py-12">
+                <p className="text-slate-600">Loading inspections...</p>
+              </CardContent>
+            </Card>
+          ) : inspections.length > 0 ? (
             inspections.map((inspection, index) => (
               <Card key={index} className="border-emerald-200">
                 <CardContent className="p-6">
@@ -101,12 +170,20 @@ const InspectionHistory = () => {
                       <FileText className="h-8 w-8 text-emerald-600" />
                       <div>
                         <h3 className="font-medium text-slate-800">
-                          Inspection by {inspection.driverName}
+                          Inspection by {inspection.drivers?.name || inspection.driverName}
                         </h3>
                         <p className="text-sm text-slate-600">
-                          {new Date(inspection.submittedAt).toLocaleDateString()} - 
-                          Sent to: {inspection.supervisor?.name}
+                          {inspection.inspection_date ? 
+                            new Date(inspection.inspection_date).toLocaleDateString() :
+                            new Date(inspection.submittedAt).toLocaleDateString()
+                          } - 
+                          Sent to: {inspection.supervisors?.name || inspection.supervisor?.name}
                         </p>
+                        {inspection.vehicles && (
+                          <p className="text-xs text-slate-500">
+                            Vehicle: {inspection.vehicles.name} ({inspection.vehicles.plate_number})
+                          </p>
+                        )}
                       </div>
                     </div>
                     
