@@ -29,12 +29,29 @@ const Index = () => {
   const [signatureData, setSignatureData] = useState('');
   const [selectedSupervisor, setSelectedSupervisor] = useState<Supervisor>();
 
-  // Always start fresh - clear any saved driver info on component mount
+  // Handle existing driver session and route logic
   useEffect(() => {
-    // Clear saved driver info to ensure fresh start every time
+    const savedDriverInfo = localStorage.getItem('fleetcheck-current-driver');
+    
+    // If we're on /inspection route and have saved driver info, start inspection
+    if (location.pathname === '/inspection' && savedDriverInfo) {
+      try {
+        const driverData = JSON.parse(savedDriverInfo);
+        if (driverData.name && driverData.id) {
+          setDriverInfo(driverData);
+          setCurrentStep('startday');
+          return;
+        }
+      } catch (error) {
+        console.error('Error parsing saved driver info:', error);
+        localStorage.removeItem('fleetcheck-current-driver');
+      }
+    }
+    
+    // For home route or if no valid driver info, start fresh at signin
     localStorage.removeItem('fleetcheck-current-driver');
     setCurrentStep('signin');
-  }, []);
+  }, [location.pathname]);
 
   const handleSignIn = async (name: string, id: string) => {
     try {
