@@ -31,10 +31,19 @@ const Dashboard = () => {
     try {
       console.log('Loading dashboard data from Supabase...');
       
-      // Load inspections
+      // Load inspections with detailed logging
+      console.log('Fetching inspections...');
       const inspectionsData = await getInspections();
+      console.log('Raw inspections data:', inspectionsData);
       console.log('Loaded inspections:', inspectionsData?.length || 0, 'records');
-      setInspections(inspectionsData || []);
+      
+      if (inspectionsData && inspectionsData.length > 0) {
+        console.log('First inspection:', inspectionsData[0]);
+        setInspections(inspectionsData);
+      } else {
+        console.log('No inspections returned from getInspections()');
+        setInspections([]);
+      }
       
       // Load vehicles
       const { data: vehiclesData } = await supabase
@@ -49,14 +58,17 @@ const Dashboard = () => {
       setSupervisors(supervisorsData || []);
       
       console.log('Dashboard data loaded successfully');
+      console.log('Final inspections state:', inspectionsData?.length || 0);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
+      console.error('Full error details:', JSON.stringify(error, null, 2));
       
       // Fallback to localStorage
       const localInspections = JSON.parse(localStorage.getItem('fleetcheck-inspections') || '[]');
       const localVehicles = JSON.parse(localStorage.getItem('fleetcheck-vehicles') || '[]');
       const localSupervisors = JSON.parse(localStorage.getItem('fleetcheck-supervisors') || '[]');
       
+      console.log('Using localStorage fallback - inspections:', localInspections.length);
       setInspections(localInspections.slice(-5));
       setVehicles(localVehicles);
       setSupervisors(localSupervisors);

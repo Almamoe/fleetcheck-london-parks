@@ -171,20 +171,30 @@ export const saveInspection = async (inspectionData: any): Promise<string> => {
 };
 
 export const getInspections = async () => {
-  const { data, error } = await supabase
-    .from('inspections')
-    .select(`
-      *,
-      drivers:driver_id(name, driver_id),
-      vehicles:vehicle_id(name, plate_number),
-      supervisors:supervisor_id(name, email, department)
-    `)
-    .order('created_at', { ascending: false });
+  console.log('getInspections: Starting to fetch inspections...');
+  
+  try {
+    const { data, error } = await supabase
+      .from('inspections')
+      .select(`
+        *,
+        drivers:driver_id(name, driver_id),
+        vehicles:vehicle_id(name, plate_number),
+        supervisors:supervisor_id(name, email, department)
+      `)
+      .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error('Error fetching inspections:', error);
+    if (error) {
+      console.error('getInspections: Supabase error:', error);
+      throw error;
+    }
+
+    console.log('getInspections: Successfully fetched', data?.length || 0, 'inspections');
+    console.log('getInspections: Sample data:', data?.[0]);
+    
+    return data;
+  } catch (error) {
+    console.error('getInspections: Caught error:', error);
     throw error;
   }
-
-  return data;
 };
