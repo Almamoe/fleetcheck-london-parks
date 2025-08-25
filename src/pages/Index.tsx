@@ -32,32 +32,27 @@ const Index = () => {
   // Check for existing driver session when component mounts
   useEffect(() => {
     const checkExistingSession = () => {
-      // Check if there's driver info in localStorage from a recent session
-      const savedDriverInfo = localStorage.getItem('fleetcheck-current-driver');
-      if (savedDriverInfo) {
-        try {
-          const driverData = JSON.parse(savedDriverInfo);
-          if (driverData.name && driverData.id) {
-            setDriverInfo(driverData);
-            // Only redirect to dashboard if on home route, not if intentionally going to inspection
-            if (location.pathname === '/') {
-              navigate('/dashboard');
-              return;
-            }
-            // If coming from dashboard to start new inspection, go to startday
-            if (location.pathname === '/inspection') {
+      // Only auto-populate driver info if coming from dashboard to start new inspection
+      if (location.pathname === '/inspection') {
+        const savedDriverInfo = localStorage.getItem('fleetcheck-current-driver');
+        if (savedDriverInfo) {
+          try {
+            const driverData = JSON.parse(savedDriverInfo);
+            if (driverData.name && driverData.id) {
+              setDriverInfo(driverData);
               setCurrentStep('startday');
             }
+          } catch (error) {
+            console.error('Error parsing saved driver info:', error);
+            localStorage.removeItem('fleetcheck-current-driver');
           }
-        } catch (error) {
-          console.error('Error parsing saved driver info:', error);
-          localStorage.removeItem('fleetcheck-current-driver');
         }
       }
+      // For home route ('/'), always start at signin regardless of saved info
     };
 
     checkExistingSession();
-  }, [location.pathname, navigate]);
+  }, [location.pathname]);
 
   const handleSignIn = async (name: string, id: string) => {
     try {
