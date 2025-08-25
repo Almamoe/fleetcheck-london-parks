@@ -39,12 +39,12 @@ const Index = () => {
           const driverData = JSON.parse(savedDriverInfo);
           if (driverData.name && driverData.id) {
             setDriverInfo(driverData);
-            // If on inspection route and have driver info, redirect to dashboard to see completed inspections
-            if (location.pathname === '/' || location.pathname === '/inspection') {
+            // Only redirect to dashboard if on home route, not if intentionally going to inspection
+            if (location.pathname === '/') {
               navigate('/dashboard');
               return;
             }
-            // If coming from dashboard (not a fresh start), go to startday
+            // If coming from dashboard to start new inspection, go to startday
             if (location.pathname === '/inspection') {
               setCurrentStep('startday');
             }
